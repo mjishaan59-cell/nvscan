@@ -1,0 +1,525 @@
+{% extends "base.html" %}
+
+{% block title %}Targets - nvscan{% endblock %}
+
+{% block page_title %}Targets{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h2>Target Management</h2>
+        <p>
+            Register authorized systems and networks for vulnerability assessment.
+        </p>
+    </div>
+</div>
+
+<div class="panel">
+
+```
+<div class="panel-header">
+    <h2>Add Target</h2>
+</div>
+
+<div class="panel-body">
+
+    <form id="target-form" class="form">
+
+        <div class="form-group">
+            <label for="target-input">
+                Target
+            </label>
+
+            <input
+                type="text"
+                id="target-input"
+                name="target"
+                placeholder="127.0.0.1 or 192.168.1.0/24 or example.com"
+                autocomplete="off"
+                required
+            >
+
+            <small class="form-help">
+                Enter an authorized IPv4, IPv6, network, or hostname.
+            </small>
+        </div>
+
+        <div class="form-actions">
+
+            <button
+                type="submit"
+                class="button button-primary"
+                id="add-target-button"
+            >
+                Add Target
+            </button>
+
+            <button
+                type="button"
+                class="button button-secondary"
+                id="clear-target-button"
+            >
+                Clear
+            </button>
+
+        </div>
+
+    </form>
+
+    <div
+        id="target-message"
+        class="message"
+        style="display: none;"
+    ></div>
+
+</div>
+```
+
+</div>
+
+<div class="panel">
+
+```
+<div class="panel-header">
+
+    <div>
+        <h2>Registered Targets</h2>
+        <p id="target-count">
+            Loading targets...
+        </p>
+    </div>
+
+    <button
+        type="button"
+        class="button button-secondary"
+        id="refresh-targets-button"
+    >
+        Refresh
+    </button>
+
+</div>
+
+<div
+    id="targets-container"
+    class="panel-body"
+>
+
+    <div class="empty-state">
+        Loading registered targets...
+    </div>
+
+</div>
+```
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+"use strict";
+
+
+async function loadTargets() {
+
+    const container =
+        document.getElementById(
+            "targets-container"
+        );
+
+    const countElement =
+        document.getElementById(
+            "target-count"
+        );
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/targets"
+            );
+
+        const data =
+            await response.json();
+
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+            throw new Error(
+                data.error ||
+                "Failed to load targets."
+            );
+        }
+
+        countElement.textContent =
+            `${data.count} registered target(s)`;
+
+        renderTargets(
+            container,
+            data.targets
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Target loading error:",
+            error
+        );
+
+        countElement.textContent =
+            "Unable to load targets.";
+
+        container.innerHTML = `
+            <div class="message message-error">
+                ${escapeHtml(
+                    error.message
+                )}
+            </div>
+        `;
+    }
+}
+
+
+function renderTargets(
+    container,
+    targets
+) {
+
+    if (
+        !targets ||
+        targets.length === 0
+    ) {
+
+        container.innerHTML = `
+            <div class="empty-state">
+                No targets have been registered yet.
+            </div>
+        `;
+
+        return;
+    }
+
+
+    const rows =
+        targets.map(
+            (target) => {
+
+                return `
+                    <tr>
+
+                        <td>
+                            #${target.id}
+                        </td>
+
+                        <td>
+                            <strong>
+                                ${escapeHtml(
+                                    target.target
+                                )}
+                            </strong>
+                        </td>
+
+                        <td>
+                            <span class="badge badge-info">
+                                ${escapeHtml(
+                                    target.target_type
+                                )}
+                            </span>
+                        </td>
+
+                        <td>
+                            ${escapeHtml(
+                                target.created_at
+                            )}
+                        </td>
+
+                        <td>
+                            ${target.scan_count}
+                        </td>
+
+                        <td>
+
+                            <a
+                                href="/api/targets/${target.id}"
+                                class="button button-primary"
+                                target="_blank"
+                            >
+                                View
+                            </a>
+
+                        </td>
+
+                    </tr>
+                `;
+            }
+        ).join("");
+
+
+    container.innerHTML = `
+
+        <div class="table-container">
+
+            <table class="data-table">
+
+                <thead>
+
+                    <tr>
+                        <th>ID</th>
+                        <th>Target</th>
+                        <th>Type</th>
+                        <th>Created</th>
+                        <th>Scans</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+                    ${rows}
+                </tbody>
+
+            </table>
+
+        </div>
+    `;
+}
+
+
+async function addTarget(
+    event
+) {
+
+    event.preventDefault();
+
+    const input =
+        document.getElementById(
+            "target-input"
+        );
+
+    const button =
+        document.getElementById(
+            "add-target-button"
+        );
+
+    const target =
+        input.value.trim();
+
+
+    if (!target) {
+
+        showMessage(
+            "Please enter a target.",
+            "error"
+        );
+
+        return;
+    }
+
+
+    button.disabled = true;
+
+    button.textContent =
+        "Adding...";
+
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/targets",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        target: target
+                    })
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (
+            !response.ok ||
+            !data.success
+        ) {
+
+            throw new Error(
+                data.error ||
+                "Failed to register target."
+            );
+        }
+
+
+        if (data.created) {
+
+            showMessage(
+                "Target registered successfully.",
+                "success"
+            );
+
+        } else {
+
+            showMessage(
+                "Target is already registered.",
+                "info"
+            );
+        }
+
+
+        input.value = "";
+
+        await loadTargets();
+
+    } catch (error) {
+
+        console.error(
+            "Target creation error:",
+            error
+        );
+
+        showMessage(
+            error.message,
+            "error"
+        );
+
+    } finally {
+
+        button.disabled = false;
+
+        button.textContent =
+            "Add Target";
+    }
+}
+
+
+function showMessage(
+    message,
+    type
+) {
+
+    const element =
+        document.getElementById(
+            "target-message"
+        );
+
+
+    element.textContent =
+        message;
+
+    element.className =
+        `message message-${type}`;
+
+    element.style.display =
+        "block";
+
+
+    window.setTimeout(
+        () => {
+            element.style.display =
+                "none";
+        },
+        5000
+    );
+}
+
+
+function clearTargetInput() {
+
+    document.getElementById(
+        "target-input"
+    ).value = "";
+
+    document.getElementById(
+        "target-input"
+    ).focus();
+}
+
+
+function escapeHtml(
+    value
+) {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+        return "";
+    }
+
+
+    return String(value)
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
+}
+
+
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        loadTargets();
+
+        document
+            .getElementById(
+                "target-form"
+            )
+            .addEventListener(
+                "submit",
+                addTarget
+            );
+
+
+        document
+            .getElementById(
+                "clear-target-button"
+            )
+            .addEventListener(
+                "click",
+                clearTargetInput
+            );
+
+
+        document
+            .getElementById(
+                "refresh-targets-button"
+            )
+            .addEventListener(
+                "click",
+                loadTargets
+            );
+
+    }
+);
+</script>
+
+{% endblock %}
+
