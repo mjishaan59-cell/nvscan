@@ -1,7 +1,8 @@
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_file
 
 from database.database import Database
 from reports.report_generator import ReportGenerator
+from reports.html_exporter import HTMLReportExporter
 from scanner.controller import ScanController
 from scanner.target_validator import TargetValidator
 
@@ -15,6 +16,7 @@ def create_app():
     database = Database()
     validator = TargetValidator()
     report_generator = ReportGenerator()
+    html_exporter = HTMLReportExporter()
 
     database.initialize()
 
@@ -484,6 +486,63 @@ def create_app():
             services=result["services"],
             findings=findings,
         )
+    @app.get("/api/reports/<int:scan_id>/html")
+    def download_html_report(scan_id):
+        """Generate and download an HTML security report."""
+
+        scan_result = database.get_scan_results(scan_id)
+
+        if scan_result is None:
+            return jsonify(
+                {
+                    "success": False,
+                    "error": "Scan not found.",
+                }
+            ), 404
+
+        findings = []
+
+        for finding in scan_result["findings"]:
+            finding = dict(finding)
+
+            evidence = finding.get("evidence")
+
+            if evidence:
+                try:
+                    import json
+
+                    finding["evidence"] = json.loads(
+                        evidence
+                    )
+                except (
+                    json.JSONDecodeError,
+                    TypeError,
+                ):
+                    pass
+
+            findings.append(finding)
+
+        scan_result["findings"] = findings
+
+        report = report_generator.generate(
+            scan_result
+        )
+
+        html = html_exporter.generate(report)
+
+        from io import BytesIO
+
+        return send_file(
+            BytesIO(
+                html.encode("utf-8")
+            ),
+            mimetype="text/html",
+            as_attachment=True,
+            download_name=(
+                f"nvscan_scan_{scan_id}_report.html"
+            ),
+        )
+
     @app.get("/api/reports/<int:scan_id>")
     def get_report(scan_id):
         """Generate a structured report for a stored scan."""

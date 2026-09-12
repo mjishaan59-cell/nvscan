@@ -38,6 +38,15 @@
             >
                 Generate Report
             </button>
+
+            <button
+                type="button"
+                class="btn btn-secondary"
+                id="download-report"
+                disabled
+            >
+                Download HTML Report
+            </button>
         </div>
     </div>
 
@@ -319,6 +328,10 @@ const generateButton = document.getElementById(
     "generate-report"
 );
 
+const downloadButton = document.getElementById(
+    "download-report"
+);
+
 const reportContainer = document.getElementById(
     "report-container"
 );
@@ -465,6 +478,8 @@ async function generateReport() {
         reportContainer.classList.remove(
             "hidden"
         );
+
+        downloadButton.disabled = false;
 
     } catch (error) {
 
@@ -850,6 +865,27 @@ function renderRecommendations(
 generateButton.addEventListener(
     "click",
     generateReport
+);
+
+
+downloadButton.addEventListener(
+    "click",
+    () => {
+
+        const scanId =
+            scanSelect.value;
+
+        if (!scanId) {
+            showMessage(
+                "Please select a completed scan.",
+                "error"
+            );
+            return;
+        }
+
+        window.location.href =
+            `/api/reports/${scanId}/html`;
+    }
 );
 
 

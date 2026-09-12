@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+    <title>nvscan Security Assessment Report</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #222;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        .header {
+            background: #1f2937;
+            color: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            margin: 0 0 10px 0;
+        }
+
+        .header p {
+            margin: 4px 0;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns:
+                repeat(4, minmax(0, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        .section {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .section h2 {
+            margin-top: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #f1f3f5;
+        }
+
+        .finding {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .finding h3 {
+            margin-top: 0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 9px;
+            border-radius: 12px;
+            background: #e5e7eb;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            overflow-x: auto;
+            border-radius: 5px;
+        }
+
+        ol {
+            padding-left: 25px;
+        }
+
+        .footer {
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+            margin-top: 30px;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .container {
+                max-width: none;
+                padding: 20px;
+            }
+
+            .section,
+            .card {
+                break-inside: avoid;
+            }
+        }
+
+        @media (max-width: 800px) {
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>nvscan Security Assessment Report</h1>
+
+        <p>
+            <strong>Target:</strong>
+            127.0.0.1
+        </p>
+
+        <p>
+            <strong>Scan ID:</strong>
+            7
+        </p>
+
+        <p>
+            <strong>Status:</strong>
+            completed
+        </p>
+    </div>
+
+    <div class="grid">
+
+        <div class="card">
+            <div class="stat-label">Hosts</div>
+            <div class="stat-value">
+                1
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="stat-label">Services</div>
+            <div class="stat-value">
+                7
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="stat-label">Findings</div>
+            <div class="stat-value">
+                3
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="stat-label">Maximum Risk</div>
+            <div class="stat-value">
+                0.0
+            </div>
+        </div>
+
+    </div>
+
+    <div class="section">
+
+        <h2>Executive Summary</h2>
+
+        <p>
+            nvscan assessed target 127.0.0.1. The scan identified 1 host(s) and 7 service(s). The assessment generated 3 security finding(s) requiring review.
+        </p>
+
+    </div>
+
+    <div class="section">
+
+        <h2>Scan Information</h2>
+
+        <table>
+
+            <tr>
+                <th>Target</th>
+                <td>
+                    127.0.0.1
+                </td>
+            </tr>
+
+            <tr>
+                <th>Target Type</th>
+                <td>
+                    ipv4
+                </td>
+            </tr>
+
+            <tr>
+                <th>Started</th>
+                <td>
+                    2026-09-12 19:47:26
+                </td>
+            </tr>
+
+            <tr>
+                <th>Completed</th>
+                <td>
+                    2026-09-12 19:49:48
+                </td>
+            </tr>
+
+        </table>
+
+    </div>
+
+    <div class="section">
+
+        <h2>Severity Summary</h2>
+
+        <table>
+
+            <tr>
+                <th>Severity</th>
+                <th>Count</th>
+            </tr>
+
+            <tr>
+                <td>CRITICAL</td>
+                <td>0</td>
+            </tr>
+
+            <tr>
+                <td>HIGH</td>
+                <td>0</td>
+            </tr>
+
+            <tr>
+                <td>MEDIUM</td>
+                <td>0</td>
+            </tr>
+
+            <tr>
+                <td>LOW</td>
+                <td>0</td>
+            </tr>
+
+            <tr>
+                <td>INFO</td>
+                <td>3</td>
+            </tr>
+
+        </table>
+
+    </div>
+
+    <div class="section">
+
+        <h2>Detected Services</h2>
+
+        <table>
+
+            <tr>
+                <th>Host</th>
+                <th>Port</th>
+                <th>Protocol</th>
+                <th>Service</th>
+                <th>Product</th>
+                <th>Version</th>
+            </tr>
+
+            
+                    <tr>
+                        <td>127.0.0.1</td>
+                        <td>21</td>
+                        <td>tcp</td>
+                        <td>ftp</td>
+                        <td>vsftpd</td>
+                        <td>3.0.5</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>127.0.0.1</td>
+                        <td>22</td>
+                        <td>tcp</td>
+                        <td>ssh</td>
+                        <td>OpenSSH</td>
+                        <td>9.9</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>127.0.0.1</td>
+                        <td>80</td>
+                        <td>tcp</td>
+                        <td>http</td>
+                        <td>Apache httpd</td>
+                        <td>2.4.63</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>127.0.0.1</td>
+                        <td>111</td>
+                        <td>tcp</td>
+                        <td>rpcbind</td>
+                        <td>-</td>
+                        <td>2-4</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>127.0.0.1</td>
+                        <td>631</td>
+                        <td>tcp</td>
+                        <td>ipp</td>
+                        <td>CUPS</td>
+                        <td>2.4</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>127.0.0.1</td>
+                        <td>2049</td>
+                        <td>tcp</td>
+                        <td>nfs_acl</td>
+                        <td>-</td>
+                        <td>3</td>
+                    </tr>
+                    
+                    <tr>
+                        <td>127.0.0.1</td>
+                        <td>9090</td>
+                        <td>tcp</td>
+                        <td>zeus-admin</td>
+                        <td>-</td>
+                        <td>-</td>
+                    </tr>
+                    
+
+        </table>
+
+    </div>
+
+    <div class="section">
+
+        <h2>Security Findings</h2>
+
+        
+                <div class="finding">
+
+                    <h3>
+                        WEB-002
+                        -
+                        HTTP service accessible
+                    </h3>
+
+                    <p>
+                        The web service responded successfully to an HTTP request.
+                    </p>
+
+                    <p>
+                        <span class="badge">
+                            Severity:
+                            INFO
+                        </span>
+
+                        <span class="badge">
+                            Priority:
+                            INFO
+                        </span>
+
+                        <span class="badge">
+                            Risk:
+                            0.0
+                        </span>
+                    </p>
+
+                    <p>
+                        <strong>Host:</strong>
+                        http://127.0.0.1
+                    </p>
+
+                    <p>
+                        <strong>Service:</strong>
+                        http
+                    </p>
+
+                    <p>
+                        <strong>Recommendation:</strong>
+                        Review the web server configuration and ensure unnecessary information is not exposed.
+                    </p>
+
+                    <strong>Evidence:</strong>
+
+                    <pre>{&quot;status_code&quot;: 200, &quot;server&quot;: &quot;Apache/2.4.63 (Red Hat Enterprise Linux)&quot;}</pre>
+
+                </div>
+                
+                <div class="finding">
+
+                    <h3>
+                        NET-001
+                        -
+                        SSH service detected
+                    </h3>
+
+                    <p>
+                        An SSH service is exposed on TCP port 22.
+                    </p>
+
+                    <p>
+                        <span class="badge">
+                            Severity:
+                            INFO
+                        </span>
+
+                        <span class="badge">
+                            Priority:
+                            INFO
+                        </span>
+
+                        <span class="badge">
+                            Risk:
+                            0.0
+                        </span>
+                    </p>
+
+                    <p>
+                        <strong>Host:</strong>
+                        127.0.0.1
+                    </p>
+
+                    <p>
+                        <strong>Service:</strong>
+                        ssh
+                    </p>
+
+                    <p>
+                        <strong>Recommendation:</strong>
+                        Verify that SSH access is required and restrict access to trusted networks.
+                    </p>
+
+                    <strong>Evidence:</strong>
+
+                    <pre>{&quot;source&quot;: &quot;nmap&quot;, &quot;state&quot;: &quot;open&quot;}</pre>
+
+                </div>
+                
+                <div class="finding">
+
+                    <h3>
+                        WEB-001
+                        -
+                        HTTP service detected
+                    </h3>
+
+                    <p>
+                        An HTTP service is exposed on TCP port 80.
+                    </p>
+
+                    <p>
+                        <span class="badge">
+                            Severity:
+                            INFO
+                        </span>
+
+                        <span class="badge">
+                            Priority:
+                            INFO
+                        </span>
+
+                        <span class="badge">
+                            Risk:
+                            0.0
+                        </span>
+                    </p>
+
+                    <p>
+                        <strong>Host:</strong>
+                        127.0.0.1
+                    </p>
+
+                    <p>
+                        <strong>Service:</strong>
+                        http
+                    </p>
+
+                    <p>
+                        <strong>Recommendation:</strong>
+                        Verify that the HTTP service is required and securely configured.
+                    </p>
+
+                    <strong>Evidence:</strong>
+
+                    <pre>{&quot;source&quot;: &quot;nmap&quot;, &quot;state&quot;: &quot;open&quot;}</pre>
+
+                </div>
+                
+
+    </div>
+
+    <div class="section">
+
+        <h2>Recommendations</h2>
+
+        <li>Review the web server configuration and ensure unnecessary information is not exposed.</li><li>Verify that SSH access is required and restrict access to trusted networks.</li><li>Verify that the HTTP service is required and securely configured.</li>
+
+        <ol><li>Review the web server configuration and ensure unnecessary information is not exposed.</li><li>Verify that SSH access is required and restrict access to trusted networks.</li><li>Verify that the HTTP service is required and securely configured.</li></ol>
+
+    </div>
+
+    <div class="section">
+
+        <h2>Conclusion</h2>
+
+        <p>
+            The assessment identified findings that should be reviewed according to their severity, confidence, and risk priority.
+        </p>
+
+    </div>
+
+    <div class="footer">
+        Generated by nvscan
+    </div>
+
+</div>
+
+</body>
+</html>
