@@ -1,0 +1,860 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - nvscan{% endblock %}
+
+{% block page_title %}Security Reports{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h2>Security Assessment Report</h2>
+        <p class="page-description">
+            Generate and review a detailed security assessment report
+            from a completed nvscan scan.
+        </p>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="panel-header">
+        <h3>Select Scan</h3>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label for="scan-select">Completed Scan</label>
+
+            <select id="scan-select">
+                <option value="">Loading scans...</option>
+            </select>
+        </div>
+
+        <div class="form-group form-action">
+            <button
+                type="button"
+                class="btn btn-primary"
+                id="generate-report"
+            >
+                Generate Report
+            </button>
+        </div>
+    </div>
+
+    <div id="report-message" class="message hidden"></div>
+</div>
+
+<div id="report-container" class="hidden">
+
+    <div class="panel">
+        <div class="panel-header">
+            <div>
+                <h3 id="report-title">
+                    Security Assessment Report
+                </h3>
+
+                <p id="report-target"></p>
+            </div>
+
+            <span
+                id="report-status"
+                class="badge"
+            >
+            </span>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+
+        <div class="stat-card">
+            <div class="stat-label">Hosts</div>
+            <div
+                class="stat-value"
+                id="stat-hosts"
+            >
+                0
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Services</div>
+            <div
+                class="stat-value"
+                id="stat-services"
+            >
+                0
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Findings</div>
+            <div
+                class="stat-value"
+                id="stat-findings"
+            >
+                0
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">Maximum Risk</div>
+            <div
+                class="stat-value"
+                id="stat-risk"
+            >
+                0
+            </div>
+        </div>
+
+    </div>
+
+    <div class="panel">
+
+        <div class="panel-header">
+            <h3>Executive Summary</h3>
+        </div>
+
+        <div class="report-summary">
+            <p id="executive-summary"></p>
+        </div>
+
+    </div>
+
+    <div class="panel">
+
+        <div class="panel-header">
+            <h3>Scan Information</h3>
+        </div>
+
+        <div class="table-container">
+
+            <table>
+
+                <tbody>
+
+                    <tr>
+                        <th>Scan ID</th>
+                        <td id="info-scan-id">-</td>
+                    </tr>
+
+                    <tr>
+                        <th>Target</th>
+                        <td id="info-target">-</td>
+                    </tr>
+
+                    <tr>
+                        <th>Target Type</th>
+                        <td id="info-target-type">-</td>
+                    </tr>
+
+                    <tr>
+                        <th>Started</th>
+                        <td id="info-started">-</td>
+                    </tr>
+
+                    <tr>
+                        <th>Completed</th>
+                        <td id="info-completed">-</td>
+                    </tr>
+
+                    <tr>
+                        <th>Status</th>
+                        <td id="info-status">-</td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <div class="panel">
+
+        <div class="panel-header">
+            <h3>Risk Summary</h3>
+        </div>
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    <tr>
+                        <td>Average Risk Score</td>
+                        <td id="risk-average">0</td>
+                    </tr>
+
+                    <tr>
+                        <td>Maximum Risk Score</td>
+                        <td id="risk-maximum">0</td>
+                    </tr>
+
+                    <tr>
+                        <td>Minimum Risk Score</td>
+                        <td id="risk-minimum">0</td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <div class="panel">
+
+        <div class="panel-header">
+            <h3>Severity Summary</h3>
+        </div>
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Severity</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+
+                <tbody id="severity-table">
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <div class="panel">
+
+        <div class="panel-header">
+            <h3>Detected Services</h3>
+        </div>
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Host</th>
+                        <th>Port</th>
+                        <th>Protocol</th>
+                        <th>Service</th>
+                        <th>Product</th>
+                        <th>Version</th>
+                        <th>State</th>
+                    </tr>
+                </thead>
+
+                <tbody id="services-table">
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <div class="panel">
+
+        <div class="panel-header">
+            <h3>Security Findings</h3>
+        </div>
+
+        <div id="findings-container">
+        </div>
+
+    </div>
+
+    <div class="panel">
+
+        <div class="panel-header">
+            <h3>Recommendations</h3>
+        </div>
+
+        <div id="recommendations-container">
+        </div>
+
+    </div>
+
+    <div class="panel">
+
+        <div class="panel-header">
+            <h3>Conclusion</h3>
+        </div>
+
+        <div class="report-summary">
+            <p id="report-conclusion"></p>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+
+const scanSelect = document.getElementById(
+    "scan-select"
+);
+
+const generateButton = document.getElementById(
+    "generate-report"
+);
+
+const reportContainer = document.getElementById(
+    "report-container"
+);
+
+const messageBox = document.getElementById(
+    "report-message"
+);
+
+
+function showMessage(message, type = "error") {
+
+    messageBox.textContent = message;
+
+    messageBox.className =
+        "message " + type;
+
+}
+
+
+function hideMessage() {
+
+    messageBox.textContent = "";
+
+    messageBox.className =
+        "message hidden";
+
+}
+
+
+function escapeHtml(value) {
+
+    if (value === null || value === undefined) {
+        return "";
+    }
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+async function loadScans() {
+
+    try {
+
+        const response = await fetch(
+            "/api/scans"
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(
+                data.error || "Unable to load scans."
+            );
+        }
+
+        scanSelect.innerHTML =
+            '<option value="">Select a completed scan</option>';
+
+        const completedScans =
+            data.scans.filter(
+                scan => scan.status === "completed"
+            );
+
+        completedScans.forEach(scan => {
+
+            const option =
+                document.createElement("option");
+
+            option.value = scan.id;
+
+            option.textContent =
+                `Scan #${scan.id} - ` +
+                `${scan.target} - ` +
+                `${scan.finding_count} finding(s)`;
+
+            scanSelect.appendChild(option);
+
+        });
+
+        if (completedScans.length === 0) {
+
+            scanSelect.innerHTML =
+                '<option value="">No completed scans available</option>';
+
+        }
+
+    } catch (error) {
+
+        showMessage(
+            error.message,
+            "error"
+        );
+
+    }
+}
+
+
+async function generateReport() {
+
+    const scanId =
+        scanSelect.value;
+
+    if (!scanId) {
+
+        showMessage(
+            "Please select a completed scan.",
+            "error"
+        );
+
+        return;
+    }
+
+    hideMessage();
+
+    generateButton.disabled = true;
+
+    generateButton.textContent =
+        "Generating...";
+
+    try {
+
+        const response = await fetch(
+            `/api/reports/${scanId}`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+
+            throw new Error(
+                data.error ||
+                "Unable to generate report."
+            );
+
+        }
+
+        renderReport(data);
+
+        reportContainer.classList.remove(
+            "hidden"
+        );
+
+    } catch (error) {
+
+        showMessage(
+            error.message,
+            "error"
+        );
+
+        reportContainer.classList.add(
+            "hidden"
+        );
+
+    } finally {
+
+        generateButton.disabled = false;
+
+        generateButton.textContent =
+            "Generate Report";
+
+    }
+}
+
+
+function renderReport(data) {
+
+    const report =
+        data.report;
+
+    const executive =
+        data.executive_summary;
+
+    const statistics =
+        data.statistics;
+
+    document.getElementById(
+        "report-title"
+    ).textContent =
+        report.title || "Security Assessment Report";
+
+    document.getElementById(
+        "report-target"
+    ).textContent =
+        `Target: ${report.target || "Unknown"}`;
+
+    document.getElementById(
+        "report-status"
+    ).textContent =
+        report.status || "Unknown";
+
+    document.getElementById(
+        "stat-hosts"
+    ).textContent =
+        statistics.hosts;
+
+    document.getElementById(
+        "stat-services"
+    ).textContent =
+        statistics.services;
+
+    document.getElementById(
+        "stat-findings"
+    ).textContent =
+        statistics.findings;
+
+    document.getElementById(
+        "stat-risk"
+    ).textContent =
+        statistics.risk.maximum_score;
+
+    document.getElementById(
+        "executive-summary"
+    ).textContent =
+        executive.summary;
+
+    document.getElementById(
+        "info-scan-id"
+    ).textContent =
+        report.scan_id;
+
+    document.getElementById(
+        "info-target"
+    ).textContent =
+        report.target;
+
+    document.getElementById(
+        "info-target-type"
+    ).textContent =
+        report.target_type;
+
+    document.getElementById(
+        "info-started"
+    ).textContent =
+        report.started_at || "-";
+
+    document.getElementById(
+        "info-completed"
+    ).textContent =
+        report.completed_at || "-";
+
+    document.getElementById(
+        "info-status"
+    ).textContent =
+        report.status;
+
+    document.getElementById(
+        "risk-average"
+    ).textContent =
+        statistics.risk.average_score;
+
+    document.getElementById(
+        "risk-maximum"
+    ).textContent =
+        statistics.risk.maximum_score;
+
+    document.getElementById(
+        "risk-minimum"
+    ).textContent =
+        statistics.risk.minimum_score;
+
+    renderSeverity(
+        statistics.severity
+    );
+
+    renderServices(
+        data.services
+    );
+
+    renderFindings(
+        data.findings
+    );
+
+    renderRecommendations(
+        data.recommendations
+    );
+
+    document.getElementById(
+        "report-conclusion"
+    ).textContent =
+        data.conclusion;
+
+}
+
+
+function renderSeverity(severity) {
+
+    const table =
+        document.getElementById(
+            "severity-table"
+        );
+
+    table.innerHTML = "";
+
+    const levels = [
+        "CRITICAL",
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "INFO"
+    ];
+
+    levels.forEach(level => {
+
+        const row =
+            document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${escapeHtml(level)}</td>
+            <td>${escapeHtml(severity[level] || 0)}</td>
+        `;
+
+        table.appendChild(row);
+
+    });
+
+}
+
+
+function renderServices(services) {
+
+    const table =
+        document.getElementById(
+            "services-table"
+        );
+
+    table.innerHTML = "";
+
+    if (!services.length) {
+
+        table.innerHTML =
+            '<tr><td colspan="7">No services detected.</td></tr>';
+
+        return;
+    }
+
+    services.forEach(service => {
+
+        const row =
+            document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${escapeHtml(service.address)}</td>
+            <td>${escapeHtml(service.port)}</td>
+            <td>${escapeHtml(service.protocol)}</td>
+            <td>${escapeHtml(service.service)}</td>
+            <td>${escapeHtml(service.product || "-")}</td>
+            <td>${escapeHtml(service.version || "-")}</td>
+            <td>${escapeHtml(service.state)}</td>
+        `;
+
+        table.appendChild(row);
+
+    });
+
+}
+
+
+function renderFindings(findings) {
+
+    const container =
+        document.getElementById(
+            "findings-container"
+        );
+
+    container.innerHTML = "";
+
+    if (!findings.length) {
+
+        container.innerHTML =
+            '<div class="empty-state">No security findings were generated.</div>';
+
+        return;
+    }
+
+    findings.forEach(finding => {
+
+        const card =
+            document.createElement("div");
+
+        card.className =
+            "finding-card";
+
+        const evidence =
+            finding.evidence || {};
+
+        card.innerHTML = `
+            <div class="finding-header">
+                <div>
+                    <h4>
+                        ${escapeHtml(finding.finding_id)}
+                        -
+                        ${escapeHtml(finding.title)}
+                    </h4>
+                </div>
+
+                <div class="finding-badges">
+                    <span class="badge">
+                        ${escapeHtml(finding.severity)}
+                    </span>
+
+                    <span class="badge">
+                        ${escapeHtml(finding.priority)}
+                    </span>
+                </div>
+            </div>
+
+            <p>
+                ${escapeHtml(finding.description)}
+            </p>
+
+            <div class="finding-details">
+
+                <div>
+                    <strong>Host:</strong>
+                    ${escapeHtml(finding.host || "-")}
+                </div>
+
+                <div>
+                    <strong>Port:</strong>
+                    ${escapeHtml(finding.port || "-")}
+                </div>
+
+                <div>
+                    <strong>Service:</strong>
+                    ${escapeHtml(finding.service || "-")}
+                </div>
+
+                <div>
+                    <strong>Product:</strong>
+                    ${escapeHtml(finding.product || "-")}
+                </div>
+
+                <div>
+                    <strong>Version:</strong>
+                    ${escapeHtml(finding.version || "-")}
+                </div>
+
+                <div>
+                    <strong>Confidence:</strong>
+                    ${escapeHtml(finding.confidence || "-")}
+                </div>
+
+                <div>
+                    <strong>Risk Score:</strong>
+                    ${escapeHtml(finding.score ?? 0)}
+                </div>
+
+                <div>
+                    <strong>Exposure:</strong>
+                    ${escapeHtml(finding.exposure || "-")}
+                </div>
+
+            </div>
+
+            <div class="finding-section">
+                <strong>Evidence</strong>
+                <pre>${escapeHtml(
+                    JSON.stringify(
+                        evidence,
+                        null,
+                        2
+                    )
+                )}</pre>
+            </div>
+
+            <div class="finding-section">
+                <strong>Recommendation</strong>
+                <p>
+                    ${escapeHtml(
+                        finding.recommendation || "-"
+                    )}
+                </p>
+            </div>
+        `;
+
+        container.appendChild(card);
+
+    });
+
+}
+
+
+function renderRecommendations(
+    recommendations
+) {
+
+    const container =
+        document.getElementById(
+            "recommendations-container"
+        );
+
+    container.innerHTML = "";
+
+    if (!recommendations.length) {
+
+        container.innerHTML =
+            '<div class="empty-state">No recommendations available.</div>';
+
+        return;
+    }
+
+    const list =
+        document.createElement("ol");
+
+    recommendations.forEach(
+        recommendation => {
+
+            const item =
+                document.createElement("li");
+
+            item.textContent =
+                recommendation;
+
+            list.appendChild(item);
+
+        }
+    );
+
+    container.appendChild(list);
+
+}
+
+
+generateButton.addEventListener(
+    "click",
+    generateReport
+);
+
+
+loadScans();
+
+</script>
+
+{% endblock %}

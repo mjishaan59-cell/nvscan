@@ -1,0 +1,668 @@
+{% extends "base.html" %}
+
+{% block title %}
+Scan Results - nvscan
+{% endblock %}
+
+{% block page_title %}
+Scan Results
+{% endblock %}
+
+{% block content %}
+
+<div id="results-message"></div>
+
+{% if scan %}
+
+<div class="page-header">
+    <div>
+        <h2>Scan #{{ scan.id }}</h2>
+        <p class="page-description">
+            Detailed results from the network vulnerability assessment.
+        </p>
+    </div>
+
+```
+<div>
+    <a
+        href="/scans"
+        class="button button-secondary"
+    >
+        Back to Scan History
+    </a>
+</div>
+```
+
+</div>
+
+<div class="dashboard-grid">
+
+```
+<div class="stat-card">
+    <div class="stat-label">
+        Target
+    </div>
+
+    <div class="stat-value stat-value-small">
+        {{ scan.target }}
+    </div>
+</div>
+
+
+<div class="stat-card">
+    <div class="stat-label">
+        Status
+    </div>
+
+    <div class="stat-value stat-value-small">
+        <span class="badge badge-low">
+            {{ scan.status }}
+        </span>
+    </div>
+</div>
+
+
+<div class="stat-card">
+    <div class="stat-label">
+        Hosts
+    </div>
+
+    <div class="stat-value">
+        {{ hosts|length }}
+    </div>
+</div>
+
+
+<div class="stat-card">
+    <div class="stat-label">
+        Findings
+    </div>
+
+    <div class="stat-value">
+        {{ findings|length }}
+    </div>
+</div>
+```
+
+</div>
+
+<div class="panel">
+
+```
+<div class="panel-header">
+    <div>
+        <h3>Scan Information</h3>
+
+        <p class="panel-description">
+            Basic information about this assessment.
+        </p>
+    </div>
+</div>
+
+
+<div class="table-container">
+
+    <table class="data-table">
+
+        <tbody>
+
+            <tr>
+                <th>Scan ID</th>
+                <td>#{{ scan.id }}</td>
+            </tr>
+
+            <tr>
+                <th>Target</th>
+                <td>{{ scan.target }}</td>
+            </tr>
+
+            <tr>
+                <th>Target Type</th>
+                <td>{{ scan.target_type }}</td>
+            </tr>
+
+            <tr>
+                <th>Status</th>
+                <td>{{ scan.status }}</td>
+            </tr>
+
+            <tr>
+                <th>Started</th>
+                <td>{{ scan.started_at }}</td>
+            </tr>
+
+            <tr>
+                <th>Completed</th>
+                <td>
+                    {{ scan.completed_at or "—" }}
+                </td>
+            </tr>
+
+        </tbody>
+
+    </table>
+
+</div>
+```
+
+</div>
+
+<div class="panel">
+
+```
+<div class="panel-header">
+    <div>
+        <h3>Discovered Hosts</h3>
+
+        <p class="panel-description">
+            Hosts identified during the scan.
+        </p>
+    </div>
+</div>
+
+
+{% if hosts %}
+
+<div class="table-container">
+
+    <table class="data-table">
+
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Address</th>
+                <th>Type</th>
+                <th>Hostname</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for host in hosts %}
+
+            <tr>
+
+                <td>
+                    {{ host.id }}
+                </td>
+
+                <td>
+                    <strong>
+                        {{ host.address }}
+                    </strong>
+                </td>
+
+                <td>
+                    {{ host.address_type or "—" }}
+                </td>
+
+                <td>
+                    {{ host.hostname or "—" }}
+                </td>
+
+                <td>
+
+                    {% if host.status == "up" %}
+
+                    <span class="badge badge-low">
+                        {{ host.status }}
+                    </span>
+
+                    {% else %}
+
+                    <span class="badge badge-info">
+                        {{ host.status or "unknown" }}
+                    </span>
+
+                    {% endif %}
+
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% else %}
+
+<div class="empty-state">
+    No hosts were discovered during this scan.
+</div>
+
+{% endif %}
+```
+
+</div>
+
+<div class="panel">
+
+```
+<div class="panel-header">
+    <div>
+        <h3>Detected Services</h3>
+
+        <p class="panel-description">
+            Network services and versions identified during the scan.
+        </p>
+    </div>
+</div>
+
+
+{% if services %}
+
+<div class="table-container">
+
+    <table class="data-table">
+
+        <thead>
+
+            <tr>
+                <th>Host</th>
+                <th>Port</th>
+                <th>Protocol</th>
+                <th>State</th>
+                <th>Service</th>
+                <th>Product</th>
+                <th>Version</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            {% for service in services %}
+
+            <tr>
+
+                <td>
+                    {{ service.address }}
+                </td>
+
+                <td>
+                    <strong>
+                        {{ service.port }}
+                    </strong>
+                </td>
+
+                <td>
+                    {{ service.protocol }}
+                </td>
+
+                <td>
+
+                    {% if service.state == "open" %}
+
+                    <span class="badge badge-low">
+                        {{ service.state }}
+                    </span>
+
+                    {% else %}
+
+                    <span class="badge badge-info">
+                        {{ service.state }}
+                    </span>
+
+                    {% endif %}
+
+                </td>
+
+                <td>
+                    {{ service.service or "—" }}
+                </td>
+
+                <td>
+                    {{ service.product or "—" }}
+                </td>
+
+                <td>
+                    {{ service.version or "—" }}
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% else %}
+
+<div class="empty-state">
+    No services were detected during this scan.
+</div>
+
+{% endif %}
+```
+
+</div>
+
+<div class="panel">
+
+```
+<div class="panel-header">
+    <div>
+        <h3>Security Findings</h3>
+
+        <p class="panel-description">
+            Security findings identified and prioritized by nvscan.
+        </p>
+    </div>
+</div>
+
+
+{% if findings %}
+
+<div class="table-container">
+
+    <table class="data-table">
+
+        <thead>
+
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Severity</th>
+                <th>Confidence</th>
+                <th>Host</th>
+                <th>Port</th>
+                <th>Risk</th>
+                <th>Priority</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            {% for finding in findings %}
+
+            <tr>
+
+                <td>
+                    <strong>
+                        {{ finding.finding_id }}
+                    </strong>
+                </td>
+
+                <td>
+                    {{ finding.title }}
+                </td>
+
+                <td>
+
+                    {% if finding.severity == "CRITICAL" %}
+
+                    <span class="badge badge-critical">
+                        CRITICAL
+                    </span>
+
+                    {% elif finding.severity == "HIGH" %}
+
+                    <span class="badge badge-high">
+                        HIGH
+                    </span>
+
+                    {% elif finding.severity == "MEDIUM" %}
+
+                    <span class="badge badge-medium">
+                        MEDIUM
+                    </span>
+
+                    {% elif finding.severity == "LOW" %}
+
+                    <span class="badge badge-low">
+                        LOW
+                    </span>
+
+                    {% else %}
+
+                    <span class="badge badge-info">
+                        {{ finding.severity }}
+                    </span>
+
+                    {% endif %}
+
+                </td>
+
+                <td>
+                    {{ finding.confidence or "—" }}
+                </td>
+
+                <td>
+                    {{ finding.host or "—" }}
+                </td>
+
+                <td>
+                    {{ finding.port or "—" }}
+                </td>
+
+                <td>
+                    {{ finding.score if finding.score is not none else "—" }}
+                </td>
+
+                <td>
+
+                    {% if finding.priority == "CRITICAL" %}
+
+                    <span class="badge badge-critical">
+                        CRITICAL
+                    </span>
+
+                    {% elif finding.priority == "HIGH" %}
+
+                    <span class="badge badge-high">
+                        HIGH
+                    </span>
+
+                    {% elif finding.priority == "MEDIUM" %}
+
+                    <span class="badge badge-medium">
+                        MEDIUM
+                    </span>
+
+                    {% elif finding.priority == "LOW" %}
+
+                    <span class="badge badge-low">
+                        LOW
+                    </span>
+
+                    {% else %}
+
+                    <span class="badge badge-info">
+                        {{ finding.priority or "INFO" }}
+                    </span>
+
+                    {% endif %}
+
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+
+<div class="finding-details">
+
+    {% for finding in findings %}
+
+    <div class="panel finding-card">
+
+        <div class="panel-header">
+
+            <div>
+
+                <h3>
+                    {{ finding.finding_id }} —
+                    {{ finding.title }}
+                </h3>
+
+                <p class="panel-description">
+                    {{ finding.description }}
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="table-container">
+
+            <table class="data-table">
+
+                <tbody>
+
+                    <tr>
+                        <th>Severity</th>
+                        <td>
+                            {{ finding.severity }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Confidence</th>
+                        <td>
+                            {{ finding.confidence or "—" }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Risk Score</th>
+                        <td>
+                            {{ finding.score if finding.score is not none else "—" }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Priority</th>
+                        <td>
+                            {{ finding.priority or "—" }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Exposure</th>
+                        <td>
+                            {{ finding.exposure or "—" }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Host</th>
+                        <td>
+                            {{ finding.host or "—" }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Port</th>
+                        <td>
+                            {{ finding.port or "—" }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Service</th>
+                        <td>
+                            {{ finding.service or "—" }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Product</th>
+                        <td>
+                            {{ finding.product or "—" }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Version</th>
+                        <td>
+                            {{ finding.version or "—" }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Recommendation</th>
+                        <td>
+                            {{ finding.recommendation or "—" }}
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+{% else %}
+
+<div class="empty-state">
+    No security findings were generated for this scan.
+</div>
+
+{% endif %}
+```
+
+</div>
+
+{% else %}
+
+<div class="page-header">
+
+```
+<div>
+    <h2>Scan Not Found</h2>
+
+    <p class="page-description">
+        The requested scan does not exist in the nvscan database.
+    </p>
+</div>
+```
+
+</div>
+
+<div class="panel">
+
+```
+<div class="empty-state">
+
+    <p>
+        The scan ID you requested could not be found.
+    </p>
+
+    <a
+        href="/scans"
+        class="button button-primary"
+    >
+        Return to Scan History
+    </a>
+
+</div>
+```
+
+</div>
+
+{% endif %}
+
+{% endblock %}
+

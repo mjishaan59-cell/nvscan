@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, render_template, request
 
 from database.database import Database
+from reports.report_generator import ReportGenerator
 from scanner.controller import ScanController
 from scanner.target_validator import TargetValidator
 
@@ -13,6 +14,7 @@ def create_app():
     controller = ScanController()
     database = Database()
     validator = TargetValidator()
+    report_generator = ReportGenerator()
 
     database.initialize()
 
@@ -60,6 +62,14 @@ def create_app():
 
         return render_template(
             "targets.html"
+        )
+
+    @app.get("/scans")
+    def scans_page():
+        """Display the scan history page."""
+
+        return render_template(
+            "scan_history.html"
         )
 
     @app.get("/reports")
@@ -274,6 +284,52 @@ def create_app():
             }
         )
 
+    @app.get("/api/scans")
+    def get_scans():
+        """Return scan history."""
+
+        with database.connect() as connection:
+
+            scans = connection.execute(
+                """
+                SELECT
+                    scans.id,
+                    scans.target_id,
+                    scans.status,
+                    scans.started_at,
+                    scans.completed_at,
+                    targets.target,
+                    targets.target_type,
+                    COUNT(DISTINCT findings.id)
+                        AS finding_count
+                FROM scans
+                JOIN targets
+                    ON scans.target_id = targets.id
+                LEFT JOIN findings
+                    ON findings.scan_id = scans.id
+                GROUP BY
+                    scans.id,
+                    scans.target_id,
+                    scans.status,
+                    scans.started_at,
+                    scans.completed_at,
+                    targets.target,
+                    targets.target_type
+                ORDER BY scans.id DESC
+                """
+            ).fetchall()
+
+        return jsonify(
+            {
+                "success": True,
+                "count": len(scans),
+                "scans": [
+                    dict(scan)
+                    for scan in scans
+                ],
+            }
+        )
+
     @app.post("/api/scans")
     def create_scan():
         """Run a vulnerability scan."""
@@ -375,6 +431,105 @@ def create_app():
                 "hosts": result["hosts"],
                 "services": result["services"],
                 "findings": findings,
+            }
+        )
+    @app.get("/scans/<int:scan_id>")
+    def scan_results_page(scan_id):
+        """Display stored results for a scan."""
+
+        result = database.get_scan_results(scan_id)
+
+        if result is None:
+            return (
+                render_template(
+                    "results.html",
+                    scan=None,
+                    hosts=[],
+                    services=[],
+                    findings=[],
+                ),
+                404,
+            )
+
+        findings = []
+
+        for finding in result["findings"]:
+
+            finding = dict(finding)
+
+            evidence = finding.get(
+                "evidence"
+            )
+
+            if evidence:
+                try:
+                    import json
+
+                    finding["evidence"] = json.loads(
+                        evidence
+                    )
+
+                except (
+                    json.JSONDecodeError,
+                    TypeError,
+                ):
+                    pass
+
+            findings.append(finding)
+
+        return render_template(
+            "results.html",
+            scan=result["scan"],
+            hosts=result["hosts"],
+            services=result["services"],
+            findings=findings,
+        )
+    @app.get("/api/reports/<int:scan_id>")
+    def get_report(scan_id):
+        """Generate a structured report for a stored scan."""
+
+        scan_result = database.get_scan_results(scan_id)
+
+        if scan_result is None:
+            return jsonify(
+                {
+                    "success": False,
+                    "error": "Scan not found.",
+                }
+            ), 404
+
+        findings = []
+
+        for finding in scan_result["findings"]:
+            finding = dict(finding)
+
+            evidence = finding.get("evidence")
+
+            if evidence:
+                try:
+                    import json
+
+                    finding["evidence"] = json.loads(
+                        evidence
+                    )
+                except (
+                    json.JSONDecodeError,
+                    TypeError,
+                ):
+                    pass
+
+            findings.append(finding)
+
+        scan_result["findings"] = findings
+
+        report = report_generator.generate(
+            scan_result
+        )
+
+        return jsonify(
+            {
+                "success": True,
+                **report,
             }
         )
 
