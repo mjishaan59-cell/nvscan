@@ -3,17 +3,32 @@ import tempfile
 from pathlib import Path
 
 from scanner.parser import NmapXMLParser
+from scanner.target_validator import TargetValidator
 
 
 class NmapScanner:
-    """Run Nmap scans and return structured results."""
+    """Run Nmap scans after validating the target."""
 
     def __init__(self, nmap_path="nmap"):
         self.nmap_path = nmap_path
         self.parser = NmapXMLParser()
+        self.validator = TargetValidator()
 
     def scan(self, target):
-        """Run a basic TCP Nmap scan and parse the XML result."""
+        """Validate target, run Nmap, and return structured results."""
+
+        # Validate the target before passing it to Nmap.
+        valid, normalized_target, error = self.validator.validate(target)
+
+        if not valid:
+            return {
+                "success": False,
+                "command": None,
+                "returncode": None,
+                "stdout": "",
+                "stderr": error,
+                "data": None,
+            }
 
         with tempfile.TemporaryDirectory(prefix="nvscan-") as temp_dir:
             xml_file = Path(temp_dir) / "scan.xml"
@@ -23,7 +38,7 @@ class NmapScanner:
                 "-sT",
                 "-oX",
                 str(xml_file),
-                target,
+                normalized_target,
             ]
 
             result = subprocess.run(
@@ -65,8 +80,11 @@ if __name__ == "__main__":
 
     if not result["success"]:
         print("\n===== NMAP SCAN FAILED =====")
-        print(result["stderr"])
-        print(f"Nmap return code: {result['returncode']}")
+        print(f"Reason: {result['stderr']}")
+
+        if result["returncode"] is not None:
+            print(f"Nmap return code: {result['returncode']}")
+
         raise SystemExit(1)
 
     print("\n===== NMAP SCAN SUCCESSFUL =====")
