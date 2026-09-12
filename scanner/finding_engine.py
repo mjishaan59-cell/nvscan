@@ -1,5 +1,11 @@
+from scanner.detection_rules import DetectionRules
+
+
 class FindingEngine:
     """Convert normalized scanner results into security findings."""
+
+    def __init__(self):
+        self.rules = DetectionRules()
 
     def analyze(self, normalized_results):
         """Analyze normalized results and generate findings."""
@@ -7,179 +13,52 @@ class FindingEngine:
         findings = []
 
         for result in normalized_results:
-            findings.extend(self._analyze_result(result))
+            findings.extend(
+                self._analyze_result(result)
+            )
 
-        return findings
+        return self._remove_duplicates(findings)
 
     def _analyze_result(self, result):
         """Analyze one normalized result."""
 
-        findings = []
+        result_type = result.get("type")
 
-        if result["type"] == "service":
-            findings.extend(
-                self._analyze_service(result)
+        if result_type == "service":
+            return self.rules.analyze_service(result)
+
+        if result_type == "http_service":
+            return self.rules.analyze_http(result)
+
+        if result_type == "web_path":
+            return self.rules.analyze_web_path(result)
+
+        return []
+
+    def _remove_duplicates(self, findings):
+        """Remove duplicate findings while preserving order."""
+
+        unique_findings = []
+        seen = set()
+
+        for finding in findings:
+            evidence = finding.get("evidence") or {}
+
+            key = (
+                finding.get("finding_id"),
+                finding.get("host"),
+                finding.get("port"),
+                finding.get("service"),
+                str(sorted(evidence.items())),
             )
 
-        elif result["type"] == "http_service":
-            findings.extend(
-                self._analyze_http(result)
-            )
+            if key in seen:
+                continue
 
-        elif result["type"] == "web_path":
-            findings.extend(
-                self._analyze_web_path(result)
-            )
+            seen.add(key)
+            unique_findings.append(finding)
 
-        return findings
-
-    def _analyze_service(self, result):
-        """Analyze network service information."""
-
-        findings = []
-
-        port = result.get("port")
-        service = result.get("service")
-        product = result.get("product")
-        version = result.get("version")
-
-        # Observation: publicly accessible HTTP service.
-        if port == 80 and result.get("state") == "open":
-            findings.append(
-                {
-                    "finding_id": "WEB-001",
-                    "title": "HTTP service detected",
-                    "description": (
-                        "An HTTP service is exposed on TCP port 80."
-                    ),
-                    "severity": "INFO",
-                    "confidence": "HIGH",
-                    "host": result.get("host"),
-                    "port": port,
-                    "service": service,
-                    "product": product,
-                    "version": version,
-                    "evidence": {
-                        "source": result.get("source"),
-                        "state": result.get("state"),
-                    },
-                    "recommendation": (
-                        "Verify that the HTTP service is required "
-                        "and securely configured."
-                    ),
-                }
-            )
-
-        # Observation: SSH service detected.
-        if port == 22 and result.get("state") == "open":
-            findings.append(
-                {
-                    "finding_id": "NET-001",
-                    "title": "SSH service detected",
-                    "description": (
-                        "An SSH service is exposed on TCP port 22."
-                    ),
-                    "severity": "INFO",
-                    "confidence": "HIGH",
-                    "host": result.get("host"),
-                    "port": port,
-                    "service": service,
-                    "product": product,
-                    "version": version,
-                    "evidence": {
-                        "source": result.get("source"),
-                        "state": result.get("state"),
-                    },
-                    "recommendation": (
-                        "Verify that SSH access is required and "
-                        "restrict access to trusted networks."
-                    ),
-                }
-            )
-
-        return findings
-
-    def _analyze_http(self, result):
-        """Analyze HTTP service information."""
-
-        findings = []
-
-        evidence = result.get("evidence") or {}
-        status_code = evidence.get("status_code")
-        headers = evidence.get("headers") or {}
-
-        if status_code is not None:
-            findings.append(
-                {
-                    "finding_id": "WEB-002",
-                    "title": "HTTP service accessible",
-                    "description": (
-                        "The web service responded successfully "
-                        "to an HTTP request."
-                    ),
-                    "severity": "INFO",
-                    "confidence": "HIGH",
-                    "host": result.get("host"),
-                    "port": result.get("port"),
-                    "service": result.get("service"),
-                    "product": result.get("product"),
-                    "version": result.get("version"),
-                    "evidence": {
-                        "status_code": status_code,
-                        "server": headers.get("Server"),
-                    },
-                    "recommendation": (
-                        "Review the web server configuration and "
-                        "ensure unnecessary information is not exposed."
-                    ),
-                }
-            )
-
-        return findings
-
-    def _analyze_web_path(self, result):
-        """Analyze discovered web paths."""
-
-        findings = []
-
-        evidence = result.get("evidence") or {}
-
-        path = evidence.get("path")
-        status_code = evidence.get("status_code")
-
-        # Only report potentially interesting accessible paths.
-        if (
-            status_code in {200, 204, 301, 302, 307, 308, 401, 403}
-            and path != "/"
-        ):
-            findings.append(
-                {
-                    "finding_id": "WEB-003",
-                    "title": "Web path discovered",
-                    "description": (
-                        f"The web path '{path}' responded with "
-                        f"HTTP status {status_code}."
-                    ),
-                    "severity": "LOW",
-                    "confidence": "MEDIUM",
-                    "host": result.get("host"),
-                    "port": result.get("port"),
-                    "service": result.get("service"),
-                    "product": result.get("product"),
-                    "version": result.get("version"),
-                    "evidence": {
-                        "path": path,
-                        "url": evidence.get("url"),
-                        "status_code": status_code,
-                    },
-                    "recommendation": (
-                        "Review the discovered web path and verify "
-                        "that the resource should be accessible."
-                    ),
-                }
-            )
-
-        return findings
+        return unique_findings
 
 
 if __name__ == "__main__":
@@ -191,23 +70,77 @@ if __name__ == "__main__":
             "type": "service",
             "host": "127.0.0.1",
             "hostname": "localhost",
-            "port": 80,
+            "port": 21,
             "protocol": "tcp",
             "state": "open",
-            "service": "http",
-            "product": "Apache httpd",
-            "version": "2.4.63",
+            "service": "ftp",
+            "product": "vsftpd",
+            "version": "3.0.5",
             "evidence": None,
-        }
+        },
+        {
+            "source": "nmap",
+            "type": "service",
+            "host": "127.0.0.1",
+            "hostname": "localhost",
+            "port": 2049,
+            "protocol": "tcp",
+            "state": "open",
+            "service": "nfs_acl",
+            "product": None,
+            "version": "3",
+            "evidence": None,
+        },
+        {
+            "source": "http_scanner",
+            "type": "http_service",
+            "host": "http://127.0.0.1",
+            "hostname": None,
+            "port": None,
+            "protocol": None,
+            "state": "accessible",
+            "service": "http",
+            "product": None,
+            "version": None,
+            "evidence": {
+                "status_code": 200,
+                "content_length": 139,
+                "headers": {
+                    "Server": "Apache/2.4.63",
+                },
+            },
+        },
+        {
+            "source": "directory_enum",
+            "type": "web_path",
+            "host": "http://127.0.0.1",
+            "hostname": None,
+            "port": None,
+            "protocol": "http",
+            "state": "accessible",
+            "service": "http",
+            "product": None,
+            "version": None,
+            "evidence": {
+                "path": "/admin",
+                "url": "http://127.0.0.1/admin",
+                "status_code": 403,
+                "content_length": 196,
+                "redirected": False,
+                "error": None,
+            },
+        },
     ]
 
     findings = engine.analyze(sample_results)
 
-    print("===== FINDINGS =====")
+    print("===== FINDING ENGINE TEST =====")
+    print(f"Findings generated: {len(findings)}")
 
     for finding in findings:
         print(
             f"{finding['finding_id']} | "
             f"{finding['severity']} | "
+            f"{finding['confidence']} | "
             f"{finding['title']}"
         )
