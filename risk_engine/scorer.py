@@ -22,13 +22,49 @@ class RiskScorer:
         "INTERNET": 1.25,
     }
 
+    SERVICE_CRITICALITY = {
+        "ftp": 1.10,
+        "telnet": 1.25,
+        "rlogin": 1.25,
+        "rsh": 1.25,
+        "ssh": 1.10,
+        "http": 1.00,
+        "https": 1.00,
+        "rpcbind": 1.10,
+        "nfs": 1.15,
+        "nfs_acl": 1.15,
+        "ipp": 0.90,
+        "cups": 0.90,
+        "smtp": 1.05,
+        "dns": 1.00,
+        "ldap": 1.10,
+        "smb": 1.20,
+        "microsoft-ds": 1.20,
+        "rdp": 1.20,
+        "mysql": 1.15,
+        "postgresql": 1.15,
+        "redis": 1.20,
+        "mongodb": 1.20,
+    }
+
+    DEFAULT_SERVICE_CRITICALITY = 1.00
+
     def calculate(
         self,
         severity,
         confidence="MEDIUM",
         exposure="NETWORK",
+        service=None,
     ):
-        """Calculate a normalized risk score from 0 to 100."""
+        """
+        Calculate a normalized risk score from 0 to 100.
+
+        Factors:
+            severity
+            confidence
+            exposure
+            service criticality
+        """
 
         severity = severity.upper()
         confidence = confidence.upper()
@@ -50,17 +86,31 @@ class RiskScorer:
             )
 
         base_score = self.SEVERITY_SCORES[severity]
+
         confidence_multiplier = (
             self.CONFIDENCE_MULTIPLIERS[confidence]
         )
+
         exposure_multiplier = (
             self.EXPOSURE_MULTIPLIERS[exposure]
+        )
+
+        service_name = (
+            str(service).lower()
+            if service is not None
+            else None
+        )
+
+        service_multiplier = self.SERVICE_CRITICALITY.get(
+            service_name,
+            self.DEFAULT_SERVICE_CRITICALITY,
         )
 
         score = (
             base_score
             * confidence_multiplier
             * exposure_multiplier
+            * service_multiplier
         )
 
         score = min(round(score, 2), 100)
@@ -97,12 +147,16 @@ class RiskScorer:
         """Add risk information to a security finding."""
 
         score = self.calculate(
-            severity=finding.get("severity", "INFO"),
+            severity=finding.get(
+                "severity",
+                "INFO",
+            ),
             confidence=finding.get(
                 "confidence",
                 "MEDIUM",
             ),
             exposure=exposure,
+            service=finding.get("service"),
         )
 
         priority = self.priority(score)
@@ -113,6 +167,12 @@ class RiskScorer:
             "score": score,
             "priority": priority,
             "exposure": exposure.upper(),
+            "service_criticality": self.SERVICE_CRITICALITY.get(
+                str(finding.get("service")).lower()
+                if finding.get("service") is not None
+                else None,
+                self.DEFAULT_SERVICE_CRITICALITY,
+            ),
         }
 
         return result
@@ -122,28 +182,64 @@ if __name__ == "__main__":
     scorer = RiskScorer()
 
     test_cases = [
-        ("INFO", "HIGH", "NETWORK"),
-        ("LOW", "HIGH", "NETWORK"),
-        ("MEDIUM", "HIGH", "NETWORK"),
-        ("HIGH", "HIGH", "NETWORK"),
-        ("CRITICAL", "HIGH", "NETWORK"),
+        {
+            "name": "INFO HTTP",
+            "severity": "INFO",
+            "confidence": "HIGH",
+            "exposure": "NETWORK",
+            "service": "http",
+        },
+        {
+            "name": "MEDIUM FTP",
+            "severity": "MEDIUM",
+            "confidence": "HIGH",
+            "exposure": "NETWORK",
+            "service": "ftp",
+        },
+        {
+            "name": "MEDIUM NFS",
+            "severity": "MEDIUM",
+            "confidence": "HIGH",
+            "exposure": "NETWORK",
+            "service": "nfs",
+        },
+        {
+            "name": "HIGH SSH",
+            "severity": "HIGH",
+            "confidence": "HIGH",
+            "exposure": "NETWORK",
+            "service": "ssh",
+        },
+        {
+            "name": "HIGH Telnet",
+            "severity": "HIGH",
+            "confidence": "HIGH",
+            "exposure": "NETWORK",
+            "service": "telnet",
+        },
+        {
+            "name": "CRITICAL SMB",
+            "severity": "CRITICAL",
+            "confidence": "HIGH",
+            "exposure": "INTERNET",
+            "service": "smb",
+        },
     ]
 
     print("===== RISK ENGINE TEST =====")
 
-    for severity, confidence, exposure in test_cases:
+    for case in test_cases:
         score = scorer.calculate(
-            severity,
-            confidence,
-            exposure,
+            severity=case["severity"],
+            confidence=case["confidence"],
+            exposure=case["exposure"],
+            service=case["service"],
         )
 
         priority = scorer.priority(score)
 
         print(
-            f"{severity:8} | "
-            f"{confidence:6} | "
-            f"{exposure:8} | "
-            f"Score: {score:6} | "
+            f"{case['name']:<16} | "
+            f"Score: {score:>6.2f} | "
             f"Priority: {priority}"
         )
