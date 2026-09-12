@@ -59,31 +59,26 @@ class RiskScorer:
         """
         Calculate a normalized risk score from 0 to 100.
 
-        Factors:
-            severity
-            confidence
-            exposure
-            service criticality
+        Formula:
+
+            score =
+                base severity
+                × confidence multiplier
+                × exposure multiplier
+                × service criticality
+
+        The final value is capped at 100.
         """
 
         severity = severity.upper()
         confidence = confidence.upper()
         exposure = exposure.upper()
 
-        if severity not in self.SEVERITY_SCORES:
-            raise ValueError(
-                f"Invalid severity: {severity}"
-            )
-
-        if confidence not in self.CONFIDENCE_MULTIPLIERS:
-            raise ValueError(
-                f"Invalid confidence: {confidence}"
-            )
-
-        if exposure not in self.EXPOSURE_MULTIPLIERS:
-            raise ValueError(
-                f"Invalid exposure: {exposure}"
-            )
+        self._validate_inputs(
+            severity,
+            confidence,
+            exposure,
+        )
 
         base_score = self.SEVERITY_SCORES[severity]
 
@@ -95,10 +90,8 @@ class RiskScorer:
             self.EXPOSURE_MULTIPLIERS[exposure]
         )
 
-        service_name = (
-            str(service).lower()
-            if service is not None
-            else None
+        service_name = self._normalize_service(
+            service
         )
 
         service_multiplier = self.SERVICE_CRITICALITY.get(
@@ -113,9 +106,85 @@ class RiskScorer:
             * service_multiplier
         )
 
-        score = min(round(score, 2), 100)
+        return min(round(score, 2), 100)
 
-        return score
+    def explain(
+        self,
+        severity,
+        confidence="MEDIUM",
+        exposure="NETWORK",
+        service=None,
+    ):
+        """
+        Return a detailed explanation of the risk calculation.
+
+        The returned dictionary is designed to be stored in a
+        finding result and displayed in the dashboard/report.
+        """
+
+        severity = severity.upper()
+        confidence = confidence.upper()
+        exposure = exposure.upper()
+
+        self._validate_inputs(
+            severity,
+            confidence,
+            exposure,
+        )
+
+        base_score = self.SEVERITY_SCORES[severity]
+
+        confidence_multiplier = (
+            self.CONFIDENCE_MULTIPLIERS[confidence]
+        )
+
+        exposure_multiplier = (
+            self.EXPOSURE_MULTIPLIERS[exposure]
+        )
+
+        service_name = self._normalize_service(
+            service
+        )
+
+        service_multiplier = self.SERVICE_CRITICALITY.get(
+            service_name,
+            self.DEFAULT_SERVICE_CRITICALITY,
+        )
+
+        raw_score = (
+            base_score
+            * confidence_multiplier
+            * exposure_multiplier
+            * service_multiplier
+        )
+
+        final_score = min(
+            round(raw_score, 2),
+            100,
+        )
+
+        priority = self.priority(final_score)
+
+        return {
+            "severity": severity,
+            "base_score": base_score,
+            "confidence": confidence,
+            "confidence_multiplier": confidence_multiplier,
+            "exposure": exposure,
+            "exposure_multiplier": exposure_multiplier,
+            "service": service_name,
+            "service_criticality": service_multiplier,
+            "raw_score": round(raw_score, 2),
+            "score": final_score,
+            "priority": priority,
+            "formula": (
+                f"{base_score} × "
+                f"{confidence_multiplier} × "
+                f"{exposure_multiplier} × "
+                f"{service_multiplier} = "
+                f"{final_score}"
+            ),
+        }
 
     def priority(self, score):
         """Convert a numeric score into a priority level."""
@@ -144,102 +213,151 @@ class RiskScorer:
         finding,
         exposure="NETWORK",
     ):
-        """Add risk information to a security finding."""
+        """
+        Add risk information and calculation explanation
+        to a security finding.
+        """
 
-        score = self.calculate(
-            severity=finding.get(
-                "severity",
-                "INFO",
-            ),
-            confidence=finding.get(
-                "confidence",
-                "MEDIUM",
-            ),
-            exposure=exposure,
-            service=finding.get("service"),
+        severity = finding.get(
+            "severity",
+            "INFO",
         )
 
-        priority = self.priority(score)
+        confidence = finding.get(
+            "confidence",
+            "MEDIUM",
+        )
+
+        service = finding.get("service")
+
+        explanation = self.explain(
+            severity=severity,
+            confidence=confidence,
+            exposure=exposure,
+            service=service,
+        )
 
         result = dict(finding)
 
-        result["risk"] = {
-            "score": score,
-            "priority": priority,
-            "exposure": exposure.upper(),
-            "service_criticality": self.SERVICE_CRITICALITY.get(
-                str(finding.get("service")).lower()
-                if finding.get("service") is not None
-                else None,
-                self.DEFAULT_SERVICE_CRITICALITY,
-            ),
-        }
+        result["risk"] = explanation
 
         return result
+
+    def _normalize_service(self, service):
+        """Normalize a service name for criticality lookup."""
+
+        if service is None:
+            return None
+
+        service = str(service).strip().lower()
+
+        if not service:
+            return None
+
+        return service
+
+    def _validate_inputs(
+        self,
+        severity,
+        confidence,
+        exposure,
+    ):
+        """Validate risk scoring inputs."""
+
+        if severity not in self.SEVERITY_SCORES:
+            raise ValueError(
+                f"Invalid severity: {severity}"
+            )
+
+        if confidence not in self.CONFIDENCE_MULTIPLIERS:
+            raise ValueError(
+                f"Invalid confidence: {confidence}"
+            )
+
+        if exposure not in self.EXPOSURE_MULTIPLIERS:
+            raise ValueError(
+                f"Invalid exposure: {exposure}"
+            )
 
 
 if __name__ == "__main__":
     scorer = RiskScorer()
 
-    test_cases = [
-        {
-            "name": "INFO HTTP",
-            "severity": "INFO",
-            "confidence": "HIGH",
-            "exposure": "NETWORK",
-            "service": "http",
-        },
-        {
-            "name": "MEDIUM FTP",
-            "severity": "MEDIUM",
-            "confidence": "HIGH",
-            "exposure": "NETWORK",
-            "service": "ftp",
-        },
-        {
-            "name": "MEDIUM NFS",
-            "severity": "MEDIUM",
-            "confidence": "HIGH",
-            "exposure": "NETWORK",
-            "service": "nfs",
-        },
-        {
-            "name": "HIGH SSH",
-            "severity": "HIGH",
-            "confidence": "HIGH",
-            "exposure": "NETWORK",
-            "service": "ssh",
-        },
-        {
-            "name": "HIGH Telnet",
-            "severity": "HIGH",
-            "confidence": "HIGH",
-            "exposure": "NETWORK",
-            "service": "telnet",
-        },
-        {
-            "name": "CRITICAL SMB",
-            "severity": "CRITICAL",
-            "confidence": "HIGH",
-            "exposure": "INTERNET",
-            "service": "smb",
-        },
-    ]
+    print("===== RISK EXPLANATION TEST =====")
 
-    print("===== RISK ENGINE TEST =====")
+    explanation = scorer.explain(
+        severity="MEDIUM",
+        confidence="HIGH",
+        exposure="NETWORK",
+        service="nfs",
+    )
 
-    for case in test_cases:
-        score = scorer.calculate(
-            severity=case["severity"],
-            confidence=case["confidence"],
-            exposure=case["exposure"],
-            service=case["service"],
-        )
+    print()
+    print("Finding: NFS service exposed")
+    print()
+    print("Severity:", explanation["severity"])
+    print("Base Score:", explanation["base_score"])
+    print(
+        "Confidence:",
+        explanation["confidence"],
+    )
+    print(
+        "Confidence Multiplier:",
+        explanation["confidence_multiplier"],
+    )
+    print(
+        "Exposure:",
+        explanation["exposure"],
+    )
+    print(
+        "Exposure Multiplier:",
+        explanation["exposure_multiplier"],
+    )
+    print(
+        "Service:",
+        explanation["service"],
+    )
+    print(
+        "Service Criticality:",
+        explanation["service_criticality"],
+    )
+    print(
+        "Raw Score:",
+        explanation["raw_score"],
+    )
+    print(
+        "Final Risk Score:",
+        explanation["score"],
+    )
+    print(
+        "Priority:",
+        explanation["priority"],
+    )
+    print(
+        "Formula:",
+        explanation["formula"],
+    )
 
-        priority = scorer.priority(score)
+    print()
+    print("===== SCORE FINDING TEST =====")
 
-        print(
-            f"{case['name']:<16} | "
-            f"Score: {score:>6.2f} | "
-            f"Priority: {priority}"
-        )
+    finding = {
+        "finding_id": "NET-007",
+        "title": "NFS service exposed",
+        "severity": "MEDIUM",
+        "confidence": "HIGH",
+        "service": "nfs",
+    }
+
+    scored_finding = scorer.score_finding(
+        finding
+    )
+
+    print(
+        "Finding:",
+        scored_finding["finding_id"],
+    )
+    print(
+        "Risk:",
+        scored_finding["risk"],
+    )
