@@ -1,0 +1,405 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+    background: #f4f6f8;
+    color: #1f2933;
+}
+
+body {
+    min-height: 100vh;
+}
+
+.app-container {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* -----------------------------
+   Sidebar
+----------------------------- */
+
+.sidebar {
+    width: 250px;
+    min-height: 100vh;
+    background: #17202a;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 16px;
+}
+
+.brand {
+    padding: 0 12px 28px;
+    border-bottom: 1px solid #34404c;
+}
+
+.brand-name {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.brand-subtitle {
+    margin-top: 6px;
+    color: #aeb8c2;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.navigation {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 24px;
+}
+
+.nav-link {
+    display: block;
+    padding: 12px 14px;
+    border-radius: 6px;
+    color: #d9e0e6;
+    text-decoration: none;
+    font-size: 14px;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+.nav-link:hover {
+    background: #263442;
+    color: #ffffff;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding: 16px 12px 0;
+    border-top: 1px solid #34404c;
+    display: flex;
+    justify-content: space-between;
+    color: #8f9ba7;
+    font-size: 11px;
+}
+
+/* -----------------------------
+   Main content
+----------------------------- */
+
+.main-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.topbar {
+    min-height: 76px;
+    background: #ffffff;
+    border-bottom: 1px solid #dfe4e8;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+}
+
+.topbar h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.system-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #53606d;
+}
+
+.status-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #27ae60;
+}
+
+.page-content {
+    padding: 32px;
+}
+
+/* -----------------------------
+   Dashboard cards
+----------------------------- */
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 28px;
+}
+
+.stat-card {
+    background: #ffffff;
+    border: 1px solid #dfe4e8;
+    border-radius: 8px;
+    padding: 22px;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #697783;
+    margin-bottom: 10px;
+}
+
+.stat-value {
+    font-size: 30px;
+    font-weight: 700;
+    color: #17202a;
+}
+
+.stat-description {
+    margin-top: 7px;
+    font-size: 12px;
+    color: #8a969f;
+}
+
+/* -----------------------------
+   Panels
+----------------------------- */
+
+.panel {
+    background: #ffffff;
+    border: 1px solid #dfe4e8;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+
+.panel-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid #e5e9ed;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.panel-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.panel-body {
+    padding: 20px;
+}
+
+/* -----------------------------
+   Tables
+----------------------------- */
+
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+    text-align: left;
+    padding: 13px 12px;
+    border-bottom: 1px solid #e7ebee;
+    font-size: 13px;
+}
+
+.data-table th {
+    background: #f7f8f9;
+    color: #596773;
+    font-weight: 600;
+}
+
+.data-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* -----------------------------
+   Buttons
+----------------------------- */
+
+.button {
+    display: inline-block;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.button-primary {
+    background: #253746;
+    color: #ffffff;
+}
+
+.button-primary:hover {
+    background: #172a38;
+}
+
+/* -----------------------------
+   Forms
+----------------------------- */
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.form-input {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid #cbd3d9;
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+}
+
+.form-input:focus {
+    border-color: #6b7c8a;
+}
+
+/* -----------------------------
+   Status / severity
+----------------------------- */
+
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.badge-info {
+    background: #edf1f4;
+    color: #52606d;
+}
+
+.badge-low {
+    background: #edf5ef;
+    color: #3d6b49;
+}
+
+.badge-medium {
+    background: #f7f2e8;
+    color: #80642d;
+}
+
+.badge-high {
+    background: #f7ebe8;
+    color: #8a493c;
+}
+
+.badge-critical {
+    background: #f4e7e7;
+    color: #8b3030;
+}
+
+/* -----------------------------
+   Messages
+----------------------------- */
+
+.message {
+    padding: 14px 16px;
+    border-radius: 6px;
+    margin-bottom: 18px;
+    font-size: 13px;
+}
+
+.message-error {
+    background: #f8eaea;
+    color: #8b3030;
+    border: 1px solid #edcccc;
+}
+
+.message-success {
+    background: #eaf5ed;
+    color: #356344;
+    border: 1px solid #cfe5d5;
+}
+
+/* -----------------------------
+   Empty state
+----------------------------- */
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #7a8791;
+    font-size: 14px;
+}
+
+/* -----------------------------
+   Responsive design
+----------------------------- */
+
+@media (max-width: 1000px) {
+
+    .dashboard-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .sidebar {
+        width: 210px;
+    }
+}
+
+@media (max-width: 700px) {
+
+    .app-container {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        min-height: auto;
+    }
+
+    .navigation {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .sidebar-footer {
+        margin-top: 20px;
+    }
+
+    .topbar {
+        padding: 0 20px;
+    }
+
+    .page-content {
+        padding: 20px;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}

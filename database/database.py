@@ -19,9 +19,7 @@ class Database:
         """Create and return a SQLite database connection."""
 
         connection = sqlite3.connect(self.database_path)
-
         connection.row_factory = sqlite3.Row
-
         connection.execute("PRAGMA foreign_keys = ON")
 
         return connection
@@ -29,16 +27,32 @@ class Database:
     def initialize(self):
         """Create database tables from schema.sql."""
 
-        with open(SCHEMA_PATH, "r", encoding="utf-8") as schema_file:
+        with open(
+            SCHEMA_PATH,
+            "r",
+            encoding="utf-8",
+        ) as schema_file:
             schema = schema_file.read()
 
         with self.connect() as connection:
             connection.executescript(schema)
 
     def add_target(self, target, target_type):
-        """Add a target to the database."""
+        """Add a target or return the existing target ID."""
 
         with self.connect() as connection:
+            existing = connection.execute(
+                """
+                SELECT id
+                FROM targets
+                WHERE target = ?
+                """,
+                (target,),
+            ).fetchone()
+
+            if existing is not None:
+                return existing["id"]
+
             cursor = connection.execute(
                 """
                 INSERT INTO targets (
@@ -67,8 +81,97 @@ class Database:
 
             return dict(row) if row else None
 
+    def get_target_by_value(self, target):
+        """Retrieve a target by its target value."""
+
+        with self.connect() as connection:
+            row = connection.execute(
+                """
+                SELECT *
+                FROM targets
+                WHERE target = ?
+                """,
+                (target,),
+            ).fetchone()
+
+            return dict(row) if row else None
+
+    def get_all_targets(self):
+        """Retrieve all registered targets with scan counts."""
+
+        with self.connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT
+                    targets.id,
+                    targets.target,
+                    targets.target_type,
+                    targets.created_at,
+                    COUNT(scans.id) AS scan_count
+                FROM targets
+                LEFT JOIN scans
+                    ON scans.target_id = targets.id
+                GROUP BY
+                    targets.id,
+                    targets.target,
+                    targets.target_type,
+                    targets.created_at
+                ORDER BY targets.id DESC
+                """
+            ).fetchall()
+
+            return [dict(row) for row in rows]
+
+    def get_target_details(self, target_id):
+        """Retrieve a target together with its scan history."""
+
+        with self.connect() as connection:
+            target = connection.execute(
+                """
+                SELECT
+                    targets.id,
+                    targets.target,
+                    targets.target_type,
+                    targets.created_at,
+                    COUNT(scans.id) AS scan_count
+                FROM targets
+                LEFT JOIN scans
+                    ON scans.target_id = targets.id
+                WHERE targets.id = ?
+                GROUP BY
+                    targets.id,
+                    targets.target,
+                    targets.target_type,
+                    targets.created_at
+                """,
+                (target_id,),
+            ).fetchone()
+
+            if target is None:
+                return None
+
+            scans = connection.execute(
+                """
+                SELECT
+                    id,
+                    target_id,
+                    status,
+                    started_at,
+                    completed_at
+                FROM scans
+                WHERE target_id = ?
+                ORDER BY id DESC
+                """,
+                (target_id,),
+            ).fetchall()
+
+            return {
+                "target": dict(target),
+                "scans": [dict(scan) for scan in scans],
+            }
+
     def add_scan(self, target_id, status="running"):
-        """Create a scan record."""
+        """Create a new scan for a target."""
 
         with self.connect() as connection:
             cursor = connection.execute(
@@ -94,7 +197,10 @@ class Database:
                 SET
                     status = ?,
                     completed_at = CASE
-                        WHEN ? IN ('completed', 'failed')
+                        WHEN ? IN (
+                            'completed',
+                            'failed'
+                        )
                         THEN CURRENT_TIMESTAMP
                         ELSE completed_at
                     END
@@ -214,7 +320,10 @@ class Database:
                     evidence,
                     recommendation
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (
+                    ?, ?, ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?, ?
+                )
                 """,
                 (
                     scan_id,
@@ -295,6 +404,20 @@ class Database:
                 (scan_id,),
             ).fetchall()
 
+            services = connection.execute(
+                """
+                SELECT
+                    services.*,
+                    hosts.address,
+                    hosts.hostname
+                FROM services
+                JOIN hosts
+                    ON services.host_id = hosts.id
+                WHERE hosts.scan_id = ?
+                """,
+                (scan_id,),
+            ).fetchall()
+
             findings = connection.execute(
                 """
                 SELECT
@@ -313,11 +436,25 @@ class Database:
             return {
                 "scan": dict(scan),
                 "hosts": [dict(host) for host in hosts],
-                "findings": [
-                    dict(finding)
-                    for finding in findings
-                ],
+                "services": [dict(service) for service in services],
+                "findings": [dict(finding) for finding in findings],
             }
+
+    def get_target_scans(self, target_id):
+        """Retrieve all scans belonging to a target."""
+
+        with self.connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT *
+                FROM scans
+                WHERE target_id = ?
+                ORDER BY id DESC
+                """,
+                (target_id,),
+            ).fetchall()
+
+            return [dict(row) for row in rows]
 
 
 if __name__ == "__main__":
@@ -327,3 +464,18 @@ if __name__ == "__main__":
 
     print("===== DATABASE INITIALIZED =====")
     print(f"Database: {database.database_path}")
+
+    print("\n===== REGISTERED TARGETS =====")
+
+    targets = database.get_all_targets()
+
+    if not targets:
+        print("No targets registered.")
+    else:
+        for target in targets:
+            print(
+                f"ID: {target['id']} | "
+                f"Target: {target['target']} | "
+                f"Type: {target['target_type']} | "
+                f"Scans: {target['scan_count']}"
+            )

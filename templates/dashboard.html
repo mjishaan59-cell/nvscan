@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}
+nvscan - Dashboard
+{% endblock %}
+
+{% block page_title %}
+Dashboard
+{% endblock %}
+
+{% block content %}
+
+<div class="dashboard-grid">
+
+    <div class="stat-card">
+        <div class="stat-label">
+            Total Targets
+        </div>
+
+        <div
+            class="stat-value"
+            id="total-targets"
+        >
+            —
+        </div>
+
+        <div class="stat-description">
+            Registered scan targets
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-label">
+            Total Scans
+        </div>
+
+        <div
+            class="stat-value"
+            id="total-scans"
+        >
+            —
+        </div>
+
+        <div class="stat-description">
+            Completed and recorded scans
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-label">
+            Findings
+        </div>
+
+        <div
+            class="stat-value"
+            id="total-findings"
+        >
+            —
+        </div>
+
+        <div class="stat-description">
+            Security observations
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-label">
+            High Risk
+        </div>
+
+        <div
+            class="stat-value"
+            id="high-risk"
+        >
+            —
+        </div>
+
+        <div class="stat-description">
+            High and critical findings
+        </div>
+    </div>
+
+</div>
+
+<div class="panel">
+
+    <div class="panel-header">
+
+        <h2 class="panel-title">
+            Recent Scans
+        </h2>
+
+    </div>
+
+    <div class="panel-body">
+
+        <div
+            id="recent-scans"
+            class="empty-state"
+        >
+            Loading scan history...
+        </div>
+
+    </div>
+
+</div>
+
+<div class="panel">
+
+    <div class="panel-header">
+
+        <h2 class="panel-title">
+            System Information
+        </h2>
+
+    </div>
+
+    <div class="panel-body">
+
+        <table class="data-table">
+
+            <tbody>
+
+                <tr>
+                    <td>Application</td>
+                    <td>nvscan</td>
+                </tr>
+
+                <tr>
+                    <td>Scanner Engine</td>
+                    <td>Nmap</td>
+                </tr>
+
+                <tr>
+                    <td>Web Framework</td>
+                    <td>Flask</td>
+                </tr>
+
+                <tr>
+                    <td>Database</td>
+                    <td>SQLite</td>
+                </tr>
+
+                <tr>
+                    <td>API Status</td>
+                    <td>
+                        <span class="badge badge-low">
+                            Online
+                        </span>
+                    </td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

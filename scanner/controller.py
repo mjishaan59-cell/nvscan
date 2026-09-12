@@ -1,10 +1,14 @@
+from database.database import Database
+
 from scanner.discovery import HostDiscovery
 from scanner.port_scanner import PortScanner
 from scanner.service_detection import ServiceDetector
 from scanner.normalizer import ResultNormalizer
 from scanner.finding_engine import FindingEngine
+
 from web_scanner.http_scanner import HTTPScanner
 from web_scanner.directory_enum import DirectoryEnumerator
+
 from risk_engine.scorer import RiskScorer
 
 
@@ -23,11 +27,44 @@ class ScanController:
         self.finding_engine = FindingEngine()
         self.risk_scorer = RiskScorer()
 
+        self.database = Database()
+
+        self.database.initialize()
+
     def scan(self, target):
-        """Run the complete scanning pipeline."""
+        """Run the complete scanning pipeline and save results."""
 
         print("\n===== NVSCAN STARTED =====")
         print(f"Target: {target}")
+
+        # -------------------------------------------------
+        # 0. Create target and scan records
+        # -------------------------------------------------
+
+        target_type = self._detect_target_type(target)
+
+        try:
+            target_id = self.database.add_target(
+                target,
+                target_type,
+            )
+        except Exception as error:
+            return {
+                "success": False,
+                "error": f"Could not create target: {error}",
+                "target": target,
+                "hosts": [],
+                "normalized_results": [],
+                "findings": [],
+            }
+
+        scan_id = self.database.add_scan(
+            target_id,
+            status="running",
+        )
+
+        print(f"Database target ID: {target_id}")
+        print(f"Database scan ID: {scan_id}")
 
         # -------------------------------------------------
         # 1. Host Discovery
@@ -38,6 +75,11 @@ class ScanController:
         discovery_result = self.discovery.discover(target)
 
         if not discovery_result["success"]:
+            self.database.update_scan_status(
+                scan_id,
+                "failed",
+            )
+
             return {
                 "success": False,
                 "error": discovery_result["error"],
@@ -63,6 +105,11 @@ class ScanController:
         port_result = self.port_scanner.scan(target)
 
         if not port_result["success"]:
+            self.database.update_scan_status(
+                scan_id,
+                "failed",
+            )
+
             return {
                 "success": False,
                 "error": port_result["error"],
@@ -83,6 +130,11 @@ class ScanController:
         service_result = self.service_detector.detect(target)
 
         if not service_result["success"]:
+            self.database.update_scan_status(
+                scan_id,
+                "failed",
+            )
+
             return {
                 "success": False,
                 "error": service_result["error"],
@@ -109,7 +161,9 @@ class ScanController:
                 if port["state"] != "open":
                     continue
 
-                service = (port.get("service") or "").lower()
+                service = (
+                    port.get("service") or ""
+                ).lower()
 
                 if port["port"] == 80 or service in {
                     "http",
@@ -119,11 +173,17 @@ class ScanController:
                     address = None
 
                     for item in host.get("addresses", []):
+
                         if item.get("type") == "ipv4":
-                            address = item.get("address")
+                            address = item.get(
+                                "address"
+                            )
                             break
 
-                    if address is None and host.get("addresses"):
+                    if (
+                        address is None
+                        and host.get("addresses")
+                    ):
                         address = host["addresses"][0].get(
                             "address"
                         )
@@ -131,8 +191,8 @@ class ScanController:
                     if address is None:
                         continue
 
-                    http_result = self.http_scanner.scan(
-                        address
+                    http_result = (
+                        self.http_scanner.scan(address)
                     )
 
                     normalized_results.extend(
@@ -162,6 +222,7 @@ class ScanController:
         print("\n[5/7] Normalizing scan results...")
 
         for host in service_result["hosts"]:
+
             normalized_results.extend(
                 self.normalizer.normalize_nmap(
                     {
@@ -212,16 +273,198 @@ class ScanController:
             f"{len(scored_findings)} finding(s)"
         )
 
+        # -------------------------------------------------
+        # 8. Save Hosts and Services
+        # -------------------------------------------------
+
+        print("\n[DB] Saving hosts and services...")
+
+        self._save_hosts_and_services(
+            scan_id,
+            service_result["hosts"],
+        )
+
+        # -------------------------------------------------
+        # 9. Save Findings and Risk Scores
+        # -------------------------------------------------
+
+        print("[DB] Saving findings and risk scores...")
+
+        self._save_findings(
+            scan_id,
+            scored_findings,
+        )
+
+        # -------------------------------------------------
+        # 10. Mark Scan Completed
+        # -------------------------------------------------
+
+        self.database.update_scan_status(
+            scan_id,
+            "completed",
+        )
+
+        print("\n[DB] Scan results saved successfully.")
+
         print("\n===== NVSCAN COMPLETED =====")
 
         return {
             "success": True,
             "error": None,
             "target": target,
+            "scan_id": scan_id,
             "hosts": hosts,
             "normalized_results": normalized_results,
             "findings": scored_findings,
         }
+
+    def _detect_target_type(self, target):
+        """Determine a basic target type."""
+
+        target = target.strip()
+
+        if "/" in target:
+            return "network"
+
+        parts = target.split(".")
+
+        if len(parts) == 4 and all(
+            part.isdigit()
+            for part in parts
+        ):
+            return "ipv4"
+
+        if ":" in target:
+            return "ipv6"
+
+        return "hostname"
+
+    def _save_hosts_and_services(
+        self,
+        scan_id,
+        hosts,
+    ):
+        """Save discovered hosts and services."""
+
+        for host in hosts:
+
+            hostname = None
+
+            if host.get("hostnames"):
+                hostname = host["hostnames"][0].get(
+                    "name"
+                )
+
+            for address in host.get(
+                "addresses",
+                [],
+            ):
+
+                host_id = self.database.add_host(
+                    scan_id=scan_id,
+                    address=address.get("address"),
+                    address_type=address.get(
+                        "type"
+                    ),
+                    hostname=hostname,
+                    status=host.get("status"),
+                )
+
+                for port in host.get(
+                    "ports",
+                    [],
+                ):
+
+                    self.database.add_service(
+                        host_id=host_id,
+                        port=port.get("port"),
+                        protocol=port.get(
+                            "protocol"
+                        ),
+                        state=port.get("state"),
+                        service=port.get(
+                            "service"
+                        ),
+                        product=port.get(
+                            "product"
+                        ),
+                        version=port.get(
+                            "version"
+                        ),
+                    )
+
+    def _save_findings(
+        self,
+        scan_id,
+        findings,
+    ):
+        """Save findings and associated risk scores."""
+
+        for finding in findings:
+
+            risk = finding.get(
+                "risk",
+                {},
+            )
+
+            finding_db_id = (
+                self.database.add_finding(
+                    scan_id=scan_id,
+                    finding_id=finding.get(
+                        "finding_id"
+                    ),
+                    title=finding.get(
+                        "title"
+                    ),
+                    description=finding.get(
+                        "description"
+                    ),
+                    severity=finding.get(
+                        "severity",
+                        "INFO",
+                    ),
+                    confidence=finding.get(
+                        "confidence"
+                    ),
+                    host=finding.get(
+                        "host"
+                    ),
+                    port=finding.get(
+                        "port"
+                    ),
+                    service=finding.get(
+                        "service"
+                    ),
+                    product=finding.get(
+                        "product"
+                    ),
+                    version=finding.get(
+                        "version"
+                    ),
+                    evidence=finding.get(
+                        "evidence"
+                    ),
+                    recommendation=finding.get(
+                        "recommendation"
+                    ),
+                )
+            )
+
+            self.database.add_risk_score(
+                finding_id=finding_db_id,
+                score=risk.get(
+                    "score",
+                    0,
+                ),
+                priority=risk.get(
+                    "priority",
+                    "INFO",
+                ),
+                exposure=risk.get(
+                    "exposure",
+                    "NETWORK",
+                ),
+            )
 
 
 if __name__ == "__main__":
@@ -234,11 +477,20 @@ if __name__ == "__main__":
     result = controller.scan(target)
 
     if not result["success"]:
+
         print("\n===== NVSCAN FAILED =====")
-        print(f"Reason: {result['error']}")
+        print(
+            f"Reason: {result['error']}"
+        )
+
         raise SystemExit(1)
 
     print("\n===== FINAL RESULTS =====")
+
+    print(
+        f"Scan ID: "
+        f"{result['scan_id']}"
+    )
 
     print(
         f"Live hosts: "
@@ -259,7 +511,10 @@ if __name__ == "__main__":
 
     for finding in result["findings"]:
 
-        risk = finding.get("risk", {})
+        risk = finding.get(
+            "risk",
+            {},
+        )
 
         print(
             f"{finding['finding_id']} | "

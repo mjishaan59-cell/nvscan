@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>{% block title %}nvscan{% endblock %}</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <aside class="sidebar">
+
+            <div class="brand">
+                <div class="brand-name">nvscan</div>
+                <div class="brand-subtitle">
+                    Network Vulnerability Assessment
+                </div>
+            </div>
+
+            <nav class="navigation">
+
+                <a
+                    href="/dashboard"
+                    class="nav-link"
+                >
+                    Dashboard
+                </a>
+
+                <a
+                    href="/targets"
+                    class="nav-link"
+                >
+                    Targets
+                </a>
+
+                <a
+                    href="/scans"
+                    class="nav-link"
+                >
+                    Scan History
+                </a>
+
+                <a
+                    href="/reports"
+                    class="nav-link"
+                >
+                    Reports
+                </a>
+
+            </nav>
+
+            <div class="sidebar-footer">
+                <span>nvscan</span>
+                <span>v1.0</span>
+            </div>
+
+        </aside>
+
+        <main class="main-content">
+
+            <header class="topbar">
+
+                <div>
+                    <h1>
+                        {% block page_title %}
+                        Dashboard
+                        {% endblock %}
+                    </h1>
+                </div>
+
+                <div class="system-status">
+                    <span class="status-dot"></span>
+                    API Online
+                </div>
+
+            </header>
+
+            <section class="page-content">
+
+                {% block content %}
+                {% endblock %}
+
+            </section>
+
+        </main>
+
+    </div>
+
+    <script
+        src="{{ url_for('static', filename='js/dashboard.js') }}"
+    ></script>
+
+    {% block scripts %}
+    {% endblock %}
+
+</body>
+</html>
