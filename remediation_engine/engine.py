@@ -14,7 +14,7 @@ class RemediationEngine:
             "Re-run the vulnerability scan to verify the issue is resolved.",
         ],
         "verification": [
-            "Re-run the IntelliScan assessment against the affected target.",
+            "Re-run the nvscan assessment against the affected target.",
             "Confirm that the finding is no longer detected.",
             "Verify that the affected service remains available and secure.",
         ],
@@ -38,7 +38,7 @@ class RemediationEngine:
             "verification": [
                 "Confirm that TCP port 21 is closed if FTP was disabled.",
                 "If FTP remains enabled, verify that only trusted systems can reach it.",
-                "Run IntelliScan again and confirm that NET-002 is no longer reported.",
+                "Run nvscan again and confirm that NET-002 is no longer reported.",
             ],
         },
         "NET-003": {
@@ -57,7 +57,7 @@ class RemediationEngine:
             "verification": [
                 "Confirm that TCP port 23 is no longer exposed.",
                 "Confirm that SSH is available for authorized administration.",
-                "Run IntelliScan again and verify that NET-003 is resolved.",
+                "Run nvscan again and verify that NET-003 is resolved.",
             ],
         },
         "NET-004": {
@@ -76,7 +76,7 @@ class RemediationEngine:
             "verification": [
                 "Confirm that the rlogin port is closed.",
                 "Verify that authorized remote administration works through SSH.",
-                "Run IntelliScan again.",
+                "Run nvscan again.",
             ],
         },
         "NET-005": {
@@ -95,7 +95,7 @@ class RemediationEngine:
             "verification": [
                 "Confirm that the rsh service is no longer listening.",
                 "Verify secure SSH access.",
-                "Run IntelliScan again and confirm that NET-005 is resolved.",
+                "Run nvscan again and confirm that NET-005 is resolved.",
             ],
         },
         "NET-006": {
@@ -114,7 +114,7 @@ class RemediationEngine:
             "verification": [
                 "Confirm that only trusted hosts can access rpcbind.",
                 "Verify that required RPC-dependent applications continue to function.",
-                "Run IntelliScan again.",
+                "Run nvscan again.",
             ],
         },
         "NET-007": {
@@ -133,7 +133,7 @@ class RemediationEngine:
             "verification": [
                 "Confirm that only authorized clients can access NFS.",
                 "Verify that unauthorized hosts cannot mount exported resources.",
-                "Run IntelliScan again.",
+                "Run nvscan again.",
             ],
         },
         "NET-008": {
@@ -151,7 +151,7 @@ class RemediationEngine:
             "verification": [
                 "Confirm that CUPS is not exposed to untrusted networks.",
                 "Verify required printing functionality.",
-                "Run IntelliScan again.",
+                "Run nvscan again.",
             ],
         },
         "WEB-004": {
@@ -170,7 +170,7 @@ class RemediationEngine:
             "verification": [
                 "Request the administrative path without authentication and confirm access is denied.",
                 "Test access using an authorized account.",
-                "Run IntelliScan again.",
+                "Run nvscan again.",
             ],
         },
         "WEB-005": {
@@ -189,7 +189,7 @@ class RemediationEngine:
             "verification": [
                 "Request the backup path and confirm it is inaccessible.",
                 "Confirm backup files are stored outside the public web root.",
-                "Run IntelliScan again.",
+                "Run nvscan again.",
             ],
         },
         "WEB-006": {
@@ -208,7 +208,7 @@ class RemediationEngine:
             "verification": [
                 "Confirm unauthorized users cannot upload files.",
                 "Confirm uploaded files cannot be executed as server-side code.",
-                "Run IntelliScan again.",
+                "Run nvscan again.",
             ],
         },
         "WEB-007": {
@@ -228,7 +228,7 @@ class RemediationEngine:
             "verification": [
                 "Test unauthenticated access to sensitive API operations.",
                 "Verify authorization for privileged operations.",
-                "Run IntelliScan again.",
+                "Run nvscan again.",
             ],
         },
         "WEB-008": {
@@ -248,7 +248,7 @@ class RemediationEngine:
                 "Confirm login traffic uses HTTPS.",
                 "Verify rate limiting against repeated failed attempts.",
                 "Verify secure session cookies.",
-                "Run IntelliScan again.",
+                "Run nvscan again.",
             ],
         },
         "WEB-009": {
@@ -267,7 +267,7 @@ class RemediationEngine:
             "verification": [
                 "Request the HTTPS endpoint.",
                 "Confirm the Strict-Transport-Security header is present.",
-                "Run IntelliScan again.",
+                "Run nvscan again.",
             ],
         },
         "WEB-010": {
@@ -287,7 +287,7 @@ class RemediationEngine:
                 "Inspect HTTP response headers.",
                 "Confirm Content-Security-Policy is present.",
                 "Verify that legitimate application functionality still works.",
-                "Run IntelliScan again.",
+                "Run nvscan again.",
             ],
         },
         "WEB-011": {
@@ -304,7 +304,7 @@ class RemediationEngine:
             "verification": [
                 "Inspect the HTTP response headers.",
                 "Confirm the clickjacking protection header is present.",
-                "Run IntelliScan again.",
+                "Run nvscan again.",
             ],
         },
         "WEB-012": {
@@ -321,7 +321,7 @@ class RemediationEngine:
             "verification": [
                 "Inspect the HTTP response headers.",
                 "Confirm X-Content-Type-Options: nosniff is present.",
-                "Run IntelliScan again.",
+                "Run nvscan again.",
             ],
         },
         "WEB-013": {
@@ -338,7 +338,7 @@ class RemediationEngine:
             "verification": [
                 "Inspect HTTP response headers.",
                 "Confirm Referrer-Policy is present.",
-                "Run IntelliScan again.",
+                "Run nvscan again.",
             ],
         },
         "WEB-014": {
@@ -356,7 +356,7 @@ class RemediationEngine:
             "verification": [
                 "Inspect the HTTP response Server header.",
                 "Confirm unnecessary version details are no longer exposed.",
-                "Run IntelliScan again.",
+                "Run nvscan again.",
             ],
         },
     }

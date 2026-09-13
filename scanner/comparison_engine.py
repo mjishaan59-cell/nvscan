@@ -2,7 +2,7 @@ from database.database import Database
 
 
 class ComparisonEngine:
-    """Compare two completed IntelliScan scans."""
+    """Compare two completed nvscan scans."""
 
     def __init__(self, database=None):
         self.database = database or Database()

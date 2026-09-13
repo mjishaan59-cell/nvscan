@@ -1,982 +1,1105 @@
-# IntelliScan
+# nvscan
 
-## Automated Network Vulnerability Assessment, Risk Prioritization and Remediation Platform
+## Automated Network Vulnerability Assessment, Risk Analysis and Remediation Platform
 
-IntelliScan is an automated cybersecurity assessment platform developed as a final-year cybersecurity project.
+`nvscan` is an automated cybersecurity assessment platform developed as a final-year cybersecurity project.
 
-The platform combines network discovery, service detection, web security checks, vulnerability detection, risk prioritization, CVE correlation, remediation generation, historical scan comparison, authentication, and HTML/PDF reporting into a single web-based application.
+The platform is designed to automate multiple stages of a network and web security assessment through a centralized workflow. It combines target management, host discovery, port and service discovery, web security checks, vulnerability finding detection, CVE correlation, risk scoring, remediation guidance, historical scan comparison, reporting, authentication, and Docker-based deployment.
 
-IntelliScan is designed for authorized cybersecurity laboratories, academic demonstrations, penetration-testing environments, and systems for which explicit testing permission has been obtained.
+> **Authorized use only:** nvscan is intended for systems, networks, laboratories, virtual machines, and applications for which the user has explicit authorization to perform security testing.
 
 ---
 
 # 1. Project Overview
 
-Traditional vulnerability assessment often requires security professionals to manually perform several activities:
+Traditional vulnerability assessment often requires security professionals to execute several tools manually, interpret their results, prioritize findings, prepare remediation guidance, and generate reports.
 
-1. Identify live hosts.
-2. Discover open ports.
-3. Identify services and versions.
-4. Analyze security weaknesses.
-5. Determine the severity of findings.
-6. Prioritize risks.
-7. Research possible vulnerabilities.
-8. Prepare remediation instructions.
-9. Compare results with previous assessments.
-10. Prepare security reports.
+`nvscan` integrates these activities into one application.
 
-IntelliScan automates these activities through a centralized assessment workflow.
+The platform accepts an authorized target and performs a structured assessment workflow:
 
-The system uses Nmap for network discovery and service detection, a rule-based vulnerability detection engine for security findings, a risk engine for prioritization, a local CVE correlation engine, a remediation engine, a historical comparison engine, and reporting modules.
-
----
-
-# 2. Project Objectives
-
-The main objectives of IntelliScan are:
-
-- Automate network host discovery.
-- Identify open ports and exposed services.
-- Detect service and product information.
-- Perform basic web security analysis.
-- Normalize scanner output.
-- Detect security weaknesses using predefined rules.
-- Assign severity levels to findings.
-- Calculate risk scores.
-- Prioritize findings.
-- Correlate detected products with a local CVE database.
-- Generate remediation recommendations.
-- Generate verification steps.
-- Store scan history.
-- Compare previous and current scans.
-- Generate HTML security reports.
-- Generate PDF security reports.
-- Provide a browser-based security dashboard.
-- Protect application access using authentication.
-- Provide a practical cybersecurity assessment workflow suitable for academic demonstration.
-
----
-
-# 3. Main Features
-
-## 3.1 Target Management
-
-Users can manage assessment targets through the web interface.
-
-Targets can represent:
-
-- IP addresses
-- Hostnames
-- Authorized laboratory systems
-- Network assessment targets
-
-Target validation is performed before scanning.
+```text
+Target Registration
+        |
+        v
+Target Validation
+        |
+        v
+Host Discovery
+        |
+        v
+Port Scanning
+        |
+        v
+Service Detection
+        |
+        v
+Web Security Scanning
+        |
+        v
+Result Normalization
+        |
+        v
+Finding Detection
+        |
+        v
+CVE Correlation
+        |
+        v
+Risk Scoring
+        |
+        v
+Remediation Generation
+        |
+        v
+Database Persistence
+        |
+        v
+Reports / Dashboard / History
+```
 
 ---
 
-## 3.2 Network Discovery
+# 2. Problem Statement
 
-IntelliScan uses Nmap to discover reachable systems and exposed network services.
+Security assessment can become time-consuming when network discovery, service analysis, web checks, vulnerability identification, risk prioritization, remediation planning, and reporting are performed separately.
 
-The scanner can identify:
+The problem addressed by nvscan is:
 
-- Live hosts
-- Open ports
-- Protocols
-- Services
-- Product names
-- Service versions
+> How can multiple vulnerability assessment activities be integrated into a centralized and automated platform that produces structured findings, risk information, remediation guidance, historical comparisons, and reports?
 
 ---
 
-## 3.3 Port and Service Detection
+# 3. Project Objectives
 
-After discovering hosts, IntelliScan analyzes available network services.
+The main objectives of nvscan are:
 
-Examples include:
-
-- SSH
-- HTTP
-- HTTPS
-- FTP
-- RPC
-- NFS
-- Other TCP services discovered by Nmap
-
-The raw scanner output is converted into normalized internal data.
-
----
-
-# 4. Web Security Scanning
-
-For web services, IntelliScan performs additional HTTP-based security checks.
-
-The web scanner can identify issues such as:
-
-- Missing HSTS
-- Missing Content-Security-Policy
-- Missing clickjacking protection
-- Missing MIME sniffing protection
-- Missing Referrer-Policy
-- Web server information disclosure
-
-The web scanning layer works together with the network scanning pipeline.
+* Automate authorized network vulnerability assessment.
+* Validate assessment targets before scanning.
+* Discover reachable hosts.
+* Identify exposed network ports.
+* Detect network services.
+* Perform HTTP-based web security checks.
+* Normalize scanner output.
+* Detect security findings using defined detection rules.
+* Correlate supported findings with known CVE information.
+* Calculate explainable risk scores.
+* Assign finding priorities.
+* Generate remediation guidance.
+* Persist assessment results in SQLite.
+* Maintain scan history.
+* Compare completed scans.
+* Generate HTML reports.
+* Generate PDF reports.
+* Provide an authenticated web dashboard.
+* Provide Docker-based deployment.
+* Support repeatable security assessment workflows.
 
 ---
 
-# 5. Vulnerability Detection Engine
+# 4. Main Features
 
-The vulnerability detection engine analyzes normalized scan results and applies predefined security detection rules.
+## 4.1 Target Management
 
-Examples of detected conditions include:
+Users can register authorized assessment targets.
 
-- FTP exposure
-- RPC exposure
-- NFS exposure
-- Security header weaknesses
-- Web server information disclosure
-- Other rule-defined service or web weaknesses
+Supported target information includes:
 
-Each finding contains security-related information such as:
+* IPv4 addresses
+* Hostnames
+* Target type classification
 
-- Finding ID
-- Title
-- Description
-- Severity
-- Evidence
-- Recommendation
-- Related service information
+The platform prevents duplicate target registration and maintains registered targets in the database.
 
 ---
 
-# 6. Risk Prioritization
+## 4.2 Target Validation
 
-IntelliScan converts security findings into numerical risk scores.
+Before a scan begins, the target passes through validation.
 
-The current severity mapping is:
-
-| Severity | Base Score |
-|---|---:|
-| INFO | 0 |
-| LOW | 25 |
-| MEDIUM | 50 |
-| HIGH | 75 |
-| CRITICAL | 100 |
-
-Risk scoring also considers exposure characteristics.
-
-The resulting score is converted into a priority that helps security teams determine which findings should be addressed first.
+The validation stage helps ensure that the supplied target is syntactically acceptable before the assessment workflow starts.
 
 ---
 
-# 7. CVE Correlation
+## 4.3 Host Discovery
 
-IntelliScan includes a local CVE correlation engine.
+nvscan determines whether the target contains reachable hosts.
 
-The correlation process compares detected:
+This allows the scanner to distinguish between:
 
-- Product
-- Service
-- Version
+```text
+Reachable target
+```
 
-against locally stored vulnerability information.
+and:
 
-The system only reports a CVE when the matching conditions are satisfied.
+```text
+Unreachable/offline target
+```
 
-This prevents unrelated CVEs from being incorrectly attached to detected software versions.
+An unreachable target is handled gracefully without causing the complete application to fail.
 
-The current demonstration database contains selected CVE information rather than a complete continuously updated vulnerability feed.
+---
+
+## 4.4 Port Scanning
+
+The platform uses Nmap-based scanning to identify exposed network ports.
+
+Example categories include:
+
+```text
+22    SSH
+21    FTP
+80    HTTP
+443   HTTPS
+111   RPC
+2049  NFS
+```
+
+The actual results depend on the authorized target being assessed.
+
+---
+
+## 4.5 Service Detection
+
+After identifying open ports, nvscan analyzes available services.
+
+Service information can include:
+
+* Port
+* Protocol
+* Service name
+* Service version where available
+
+This information is later used by the finding and risk analysis stages.
+
+---
+
+## 4.6 Web Security Scanning
+
+For discovered HTTP services, nvscan performs additional HTTP-based checks.
+
+The web scanner evaluates security-related characteristics such as HTTP response headers and web server information disclosure.
+
+Implemented checks include findings such as:
+
+* Missing HSTS
+* Missing Content-Security-Policy
+* Missing clickjacking protection
+* Missing MIME sniffing protection
+* Missing Referrer-Policy
+* Web server information disclosure
+
+---
+
+# 5. Finding Detection Engine
+
+The finding engine converts normalized scanner observations into structured security findings.
+
+Each finding can contain information such as:
+
+```text
+Finding ID
+Severity
+Title
+Description
+Evidence
+Affected target
+Affected service
+```
+
+Example finding identifiers include:
+
+```text
+WEB-009
+WEB-010
+WEB-011
+NET-002
+NET-006
+NET-007
+```
+
+The detection rules are implemented in:
+
+```text
+scanner/detection_rules.py
+scanner/finding_engine.py
+```
+
+---
+
+# 6. CVE Correlation Engine
+
+nvscan contains a local vulnerability correlation component.
+
+The CVE correlation engine evaluates supported service and vulnerability information against the application's local CVE data.
+
+The purpose is to associate applicable findings with known vulnerability identifiers where sufficient information is available.
+
+Main components:
+
+```text
+vulnerability_engine/
+├── __init__.py
+├── correlator.py
+└── cve_database.py
+```
+
+A scan can complete successfully even when no CVE matches are identified.
+
+For example:
+
+```text
+Findings detected: 9
+CVE matches: 0
+```
+
+This means that findings were successfully detected, but the available correlation data did not produce a matching CVE.
+
+---
+
+# 7. Risk Scoring
+
+nvscan contains an explainable risk scoring engine.
+
+The risk engine converts security findings into numerical risk information and assigns a priority.
+
+Example output:
+
+```text
+Finding                    Risk       Priority
+------------------------------------------------
+Missing HSTS               50.0       MEDIUM
+Missing CSP                50.0       MEDIUM
+FTP exposed                55.0       MEDIUM
+RPC exposed                55.0       MEDIUM
+NFS exposed                57.5       MEDIUM
+```
+
+> The nvscan risk score is an application-specific risk score. It should not be interpreted as a CVSS score.
+
+The risk engine is implemented in:
+
+```text
+risk_engine/scorer.py
+```
 
 ---
 
 # 8. Remediation Engine
 
-The remediation engine converts security findings into actionable recommendations.
+After findings and risk scores are generated, nvscan produces remediation guidance.
 
-For supported findings, IntelliScan generates:
+The remediation engine provides actions associated with detected findings.
 
-- Recommended action
-- Remediation steps
-- Verification steps
-- Priority
-- Related vulnerability information when applicable
+The workflow is:
 
-The remediation information is stored with the assessment results and can be displayed through the application.
+```text
+Finding
+   |
+   v
+Risk Score
+   |
+   v
+Priority
+   |
+   v
+Remediation Guidance
+```
 
-All remediation instructions should be reviewed by an administrator before being applied to production systems.
+Main implementation:
 
----
+```text
+remediation_engine/engine.py
+```
 
-# 9. Historical Scan Comparison
-
-IntelliScan can compare completed scans.
-
-The comparison engine identifies:
-
-- New findings
-- Resolved findings
-- Persistent findings
-- New services
-- Closed services
-- Previous risk score
-- Current risk score
-- Risk-score change
-- Overall security posture status
-
-Possible comparison states include:
-
-- IMPROVED
-- STABLE
-- REGRESSED
-
-This allows security teams to track whether the security posture is improving or deteriorating over time.
+Remediation guidance is stored with the assessment results.
 
 ---
 
-# 10. Reporting
+# 9. Scan Controller
 
-IntelliScan supports:
+The central scan controller coordinates the complete assessment pipeline.
+
+Main implementation:
+
+```text
+scanner/controller.py
+```
+
+The controller integrates:
+
+```text
+Host Discovery
+      |
+Port Scanning
+      |
+Service Detection
+      |
+Web Scanning
+      |
+Normalization
+      |
+Finding Detection
+      |
+CVE Correlation
+      |
+Risk Scoring
+      |
+Remediation
+      |
+Database Persistence
+```
+
+This provides a single workflow instead of requiring the user to manually execute each component.
+
+---
+
+# 10. Historical Scan Comparison
+
+nvscan stores completed scans so that users can compare assessment results over time.
+
+The comparison functionality can help identify:
+
+* New findings
+* Resolved findings
+* Persistent findings
+* Changes in risk
+* Changes between assessment periods
+
+Implementation:
+
+```text
+scanner/comparison_engine.py
+```
+
+The web interface provides a dedicated comparison page.
+
+---
+
+# 11. Reporting
+
+nvscan provides multiple reporting capabilities.
 
 ## HTML Reports
 
-HTML reports provide browser-readable security assessment information.
+HTML reports are generated using:
 
-Reports can contain:
-
-- Scan information
-- Target information
-- Host information
-- Services
-- Findings
-- Severity
-- Risk scores
-- Priority
-- Evidence
-- Recommendations
-- Remediation steps
-- Verification steps
-- CVE information
-- Conclusions
+```text
+reports/html_exporter.py
+```
 
 ## PDF Reports
 
-PDF reports are generated using ReportLab.
+PDF reports are generated using:
 
-The PDF output is suitable for:
+```text
+reports/pdf_exporter.py
+```
 
-- Academic submission
-- Security assessment documentation
-- Demonstration
-- Management review
-- Archival purposes
+The PDF exporter uses ReportLab.
 
----
+The reporting workflow is:
 
-# 11. Authentication
-
-IntelliScan includes session-based authentication.
-
-The authentication system provides:
-
-- Login
-- Logout
-- Protected application pages
-- Protected application APIs
-- Active-user validation
-- Secure password hashing
-
-Passwords are not stored as plaintext.
-
-Werkzeug password hashing is used for password verification.
-
-The health endpoint remains available for application health checking.
+```text
+Stored Scan Results
+        |
+        v
+Report Generator
+        |
+        +----> HTML Report
+        |
+        +----> PDF Report
+```
 
 ---
 
-# 12. System Architecture
+# 12. Web Application
 
-The overall IntelliScan workflow is:
+The platform provides a Flask-based web interface.
 
-    Web Browser
-         |
-         v
-    Flask Web Application
-         |
-         +--------------------+
-         |                    |
-         v                    v
-    Target Management     Authentication
-         |
-         v
-    Scan Controller
-         |
-         v
-    Nmap Scanner
-         |
-         +-----------------------+
-         |                       |
-         v                       v
-    Host Discovery        Service Detection
-         |                       |
-         +-----------+-----------+
-                     |
-                     v
-              Result Normalizer
-                     |
-                     v
-              Web Security Scanner
-                     |
-                     v
-               Finding Engine
-                     |
-          +----------+----------+
-          |          |           |
-          v          v           v
-      Risk Engine  CVE Engine  Database
-          |          |
-          +----------+
-               |
-               v
-        Remediation Engine
-               |
-               v
-          SQLite Database
-               |
-       +-------+--------+
-       |                |
-       v                v
-    Dashboard       Reporting
-                    |
-                +---+---+
-                |       |
-                v       v
-               HTML    PDF
+Major pages include:
+
+```text
+/login
+/dashboard
+/targets
+/scans
+/reports
+/comparison
+/scan results
+```
+
+The web interface provides access to:
+
+* Target management
+* Starting scans
+* Scan history
+* Scan results
+* Risk information
+* Remediation information
+* Reports
+* Historical comparison
 
 ---
 
-# 13. Detailed Assessment Workflow
+# 13. Authentication
 
-The complete processing sequence is:
+nvscan includes session-based authentication.
 
-    1. User Login
-          |
-          v
-    2. Target Creation
-          |
-          v
-    3. Target Validation
-          |
-          v
-    4. Start Scan
-          |
-          v
-    5. Host Discovery
-          |
-          v
-    6. Port Scanning
-          |
-          v
-    7. Service Detection
-          |
-          v
-    8. Result Normalization
-          |
-          v
-    9. Web Security Checks
-          |
-          v
-    10. Finding Detection
-          |
-          v
-    11. Risk Scoring
-          |
-          v
-    12. CVE Correlation
-          |
-          v
-    13. Remediation Generation
-          |
-          v
-    14. Database Storage
-          |
-          v
-    15. Dashboard / Results
-          |
-          v
-    16. Historical Comparison
-          |
-          v
-    17. HTML / PDF Reporting
+The authentication implementation includes:
+
+* Login
+* Logout
+* Password hash verification
+* Active-user checking
+* Session management
+* Protected routes
+
+Main implementation:
+
+```text
+auth.py
+```
+
+The Flask session uses:
+
+```text
+HTTPOnly cookies
+SameSite=Lax
+```
+
+The application also supports a configurable secret key through:
+
+```text
+NVSCAN_SECRET_KEY
+```
 
 ---
 
-# 14. Technology Stack
+# 14. Database
 
-## Operating System
+nvscan uses SQLite for persistent application data.
 
-- Red Hat Enterprise Linux 10
+Database implementation:
 
-## Programming Language
+```text
+database/database.py
+```
 
-- Python 3
+Database schema:
 
-## Web Framework
+```text
+database/schema.sql
+```
 
-- Flask
+The database stores information related to:
 
-## Database
+* Users
+* Targets
+* Scans
+* Hosts
+* Services
+* Findings
+* Risk scores
+* CVE information
+* Remediation actions
+* Scan history
 
-- SQLite
-
-## Network Scanner
-
-- Nmap
-
-## PDF Generator
-
-- ReportLab
-
-## Authentication
-
-- Flask session
-- Werkzeug password hashing
-
-## Frontend
-
-- HTML
-- CSS
-- JavaScript
-- Jinja2 templates
-
-## Testing
-
-- Pytest
-
-## Version Control
-
-- Git
+The database allows assessment results to remain available after a scan has completed.
 
 ---
 
-# 15. Project Structure
+# 15. Technology Stack
 
-    nvscan/
-    |
-    +-- app.py
-    +-- auth.py
-    +-- config.py
-    +-- requirements.txt
-    +-- README.md
-    +-- .gitignore
-    |
-    +-- api/
-    |   +-- __init__.py
-    |
-    +-- database/
-    |   +-- __init__.py
-    |   +-- database.py
-    |   +-- schema.sql
-    |
-    +-- scanner/
-    |   +-- __init__.py
-    |   +-- comparison_engine.py
-    |   +-- detection_rules.py
-    |   +-- discovery.py
-    |   +-- finding_engine.py
-    |   +-- nmap_engine.py
-    |   +-- normalizer.py
-    |   +-- parser.py
-    |   +-- port_scanner.py
-    |   +-- service_detection.py
-    |   +-- target_validator.py
-    |
-    +-- web_scanner/
-    |   +-- __init__.py
-    |   +-- directory_enum.py
-    |   +-- http_scanner.py
-    |
-    +-- vulnerability_engine/
-    |   +-- __init__.py
-    |   +-- correlator.py
-    |   +-- cve_database.py
-    |
-    +-- risk_engine/
-    |   +-- __init__.py
-    |   +-- scorer.py
-    |
-    +-- remediation_engine/
-    |   +-- __init__.py
-    |   +-- engine.py
-    |
-    +-- reports/
-    |   +-- __init__.py
-    |   +-- html_exporter.py
-    |   +-- pdf_exporter.py
-    |   +-- report_generator.py
-    |
-    +-- templates/
-    |   +-- base.html
-    |   +-- login.html
-    |   +-- dashboard.html
-    |   +-- targets.html
-    |   +-- scan_history.html
-    |   +-- scan_results.html
-    |   +-- comparison.html
-    |   +-- report.html
-    |   +-- results.html
-    |
-    +-- static/
-    |
-    +-- tests/
-    |   +-- test_intelliscan.py
+| Component               | Technology                                |
+| ----------------------- | ----------------------------------------- |
+| Operating System        | RHEL 10                                   |
+| Programming Language    | Python                                    |
+| Web Framework           | Flask                                     |
+| Database                | SQLite                                    |
+| Network Scanner         | Nmap                                      |
+| Web Scanner             | Python HTTP-based scanning                |
+| Authentication          | Flask session + Werkzeug password hashing |
+| PDF Generation          | ReportLab                                 |
+| Testing                 | Pytest                                    |
+| Containerization        | Docker                                    |
+| Container Orchestration | Docker Compose                            |
+| Version Control         | Git                                       |
+| Repository Hosting      | GitHub                                    |
 
 ---
 
-# 16. Installation
+# 16. Project Structure
 
-## 16.1 System Requirements
-
-The system requires:
-
-- Red Hat Enterprise Linux 10
-- Python 3
-- Python virtual environment support
-- Nmap
-- Git
-
-Verify Python:
-
-    python3 --version
-
-Verify Nmap:
-
-    nmap --version
-
-Verify Git:
-
-    git --version
+```text
+nvscan/
+│
+├── api/
+│   └── __init__.py
+│
+├── database/
+│   ├── __init__.py
+│   ├── database.py
+│   └── schema.sql
+│
+├── remediation_engine/
+│   ├── __init__.py
+│   └── engine.py
+│
+├── reports/
+│   ├── __init__.py
+│   ├── html_exporter.py
+│   ├── pdf_exporter.py
+│   └── report_generator.py
+│
+├── risk_engine/
+│   ├── __init__.py
+│   └── scorer.py
+│
+├── scanner/
+│   ├── __init__.py
+│   ├── comparison_engine.py
+│   ├── controller.py
+│   ├── detection_rules.py
+│   ├── discovery.py
+│   ├── finding_engine.py
+│   ├── nmap_engine.py
+│   ├── normalizer.py
+│   ├── parser.py
+│   ├── port_scanner.py
+│   ├── service_detection.py
+│   └── target_validator.py
+│
+├── tests/
+│   └── test_nvscan.py
+│
+├── templates/
+│   ├── base.html
+│   ├── comparison.html
+│   ├── dashboard.html
+│   ├── login.html
+│   ├── report.html
+│   ├── results.html
+│   ├── scan_history.html
+│   ├── scan_results.html
+│   └── targets.html
+│
+├── vulnerability_engine/
+│   ├── __init__.py
+│   ├── correlator.py
+│   └── cve_database.py
+│
+├── web_scanner/
+│   ├── __init__.py
+│   ├── directory_enum.py
+│   └── http_scanner.py
+│
+├── app.py
+├── auth.py
+├── config.py
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+└── README.md
+```
 
 ---
 
-# 17. Create Python Virtual Environment
+# 17. Installation
 
-Move into the project directory:
+## Requirements
 
-    cd /opt/nvscan
+The project requires:
 
-Create the virtual environment:
+* RHEL 10 or a compatible Linux environment
+* Python 3
+* Nmap
+* Git
+* Docker for container deployment
+* Docker Compose for container deployment
 
-    python3 -m venv .venv
+---
+
+## Clone the Repository
+
+```bash
+git clone https://github.com/mjishaan59-cell/nvscan.git
+cd nvscan
+```
+
+---
+
+## Create Python Virtual Environment
+
+```bash
+python3 -m venv .venv
+```
 
 Activate it:
 
-    source .venv/bin/activate
+```bash
+source .venv/bin/activate
+```
 
 ---
 
-# 18. Install Python Dependencies
+## Install Python Dependencies
 
-Install the project dependencies:
-
-    pip install -r requirements.txt
-
-Verify Flask:
-
-    python3 -c "import flask; print(flask.__version__)"
-
-Verify ReportLab:
-
-    python3 -c "import reportlab; print(reportlab.Version)"
-
-Verify Pytest:
-
-    pytest --version
+```bash
+pip install -r requirements.txt
+```
 
 ---
 
-# 19. Nmap Requirement
+## Run nvscan
 
-Nmap is a system-level dependency and is not installed through the Python requirements file.
+```bash
+python app.py
+```
 
-Verify Nmap:
+The application listens on:
 
-    nmap --version
+```text
+http://127.0.0.1:5000
+```
 
-If Nmap is not installed, install it through the configured RHEL repository.
+When configured for remote access, the Flask application can listen on:
 
----
-
-# 20. Database
-
-IntelliScan uses SQLite.
-
-The database stores information about:
-
-- Users
-- Targets
-- Scans
-- Hosts
-- Services
-- Findings
-- Risk scores
-- Remediation information
-
-The application/database layer initializes and maintains the required database structures.
-
-For source-code distribution, the runtime SQLite database should normally not be committed to Git because it contains generated assessment data and authentication information.
+```text
+0.0.0.0:5000
+```
 
 ---
 
-# 21. Running the Application
+# 18. Docker Deployment
 
-Activate the virtual environment:
+nvscan includes a Dockerfile and Docker Compose configuration.
 
-    cd /opt/nvscan
-    source .venv/bin/activate
+Build and start the application:
 
-Start IntelliScan:
+```bash
+docker compose up -d --build
+```
 
-    python3 app.py
+Check the running container:
 
-The Flask application runs on:
+```bash
+docker ps
+```
 
-    http://127.0.0.1:5000
+Expected container:
 
-From another system that can reach the RHEL VM:
+```text
+nvscan
+```
 
-    http://<VM-IP>:5000
+Check application health:
 
----
+```bash
+curl -s http://127.0.0.1:5000/api/health
+```
 
-# 22. Application Pages
+Expected response:
 
-The web interface provides:
+```json
+{
+    "application": "nvscan",
+    "status": "healthy",
+    "success": true
+}
+```
 
-- Login
-- Dashboard
-- Targets
-- Scan History
-- Scan Results
-- Historical Comparison
-- Reports
+Stop the application:
 
-The dashboard provides an overview of the assessment environment.
+```bash
+docker compose down
+```
 
----
+Start it again:
 
-# 23. API Functionality
-
-The application provides API endpoints for operations including:
-
-- Health checking
-- Dashboard data
-- Target management
-- Scan management
-- Scan results
-- Remediation
-- HTML report generation
-- PDF report generation
-- Structured report data
-
-The majority of application APIs require authentication.
-
-The health endpoint is available for health checking.
+```bash
+docker compose up -d
+```
 
 ---
 
-# 24. Testing
+# 19. Starting a Security Scan
 
-The project contains automated tests using Pytest.
+After logging into the web interface:
 
-Run the test suite:
+```text
+Dashboard
+    |
+    v
+Targets
+    |
+    v
+Register authorized target
+    |
+    v
+Start Scan
+    |
+    v
+Scan Processing
+    |
+    v
+Results
+```
 
-    pytest -q
-
-Expected successful result:
-
-    18 passed
-
-Additional validation performed during development included:
-
-- Python compilation
-- Authentication testing
-- Dashboard access testing
-- Scan API testing
-- Real network scan testing
-- Finding detection
-- Risk scoring
-- CVE correlation
-- Remediation generation
-- Historical comparison
-- HTML reporting
-- PDF reporting
+The scan controller then executes the assessment pipeline.
 
 ---
 
-# 25. Demonstration Scan
+# 20. Example Assessment Workflow
 
-A real project scan was completed during development.
+For an authorized target:
 
-Example Scan #11 produced:
+```text
+192.168.x.x
+```
 
-    Live hosts:            1
-    Normalized results:   14
-    Security findings:     9
-    CVE matches:           0
-    Risk scores:           9
-    Remediation actions:   9
+nvscan performs:
 
-Detected findings included:
-
-    WEB-009  Missing HSTS security header
-    WEB-010  Missing Content-Security-Policy header
-    WEB-011  Missing clickjacking protection header
-    WEB-012  Missing MIME sniffing protection header
-    WEB-013  Missing Referrer-Policy header
-    WEB-014  Web server information disclosed
-    NET-002  FTP service exposed
-    NET-006  RPC service exposed
-    NET-007  NFS service exposed
-
-The Apache version detected during the demonstration was 2.4.63.
-
-The local CVE database contained older Apache vulnerability records, therefore the system correctly produced zero CVE matches for the detected Apache version rather than incorrectly reporting an unrelated CVE.
+```text
+1. Target validation
+2. Host discovery
+3. Port scanning
+4. Service detection
+5. Web scanning
+6. Result normalization
+7. Finding analysis
+8. CVE correlation
+9. Risk scoring
+10. Remediation generation
+11. Database persistence
+12. Report generation
+```
 
 ---
 
-# 26. Risk Result Example
+# 21. Example Finding Results
 
-The demonstration findings produced risk scores such as:
+A completed assessment can produce findings such as:
 
-    Missing HSTS security header
-    Risk Score: 50.0
-    Priority: MEDIUM
+```text
+WEB-009  Missing HSTS security header
+WEB-010  Missing Content-Security-Policy header
+WEB-011  Missing clickjacking protection header
+WEB-012  Missing MIME sniffing protection header
+WEB-013  Missing Referrer-Policy header
+WEB-014  Web server information disclosed
 
-    Missing Content-Security-Policy header
-    Risk Score: 50.0
-    Priority: MEDIUM
+NET-002  FTP service exposed
+NET-006  RPC service exposed
+NET-007  NFS service exposed
+```
 
-    Missing clickjacking protection header
-    Risk Score: 25.0
-    Priority: LOW
-
-    FTP service exposed
-    Risk Score: 55.0
-    Priority: MEDIUM
-
-    RPC service exposed
-    Risk Score: 55.0
-    Priority: MEDIUM
-
-    NFS service exposed
-    Risk Score: 57.5
-    Priority: MEDIUM
+The exact findings depend on the authorized target being assessed.
 
 ---
 
-# 27. Historical Comparison Example
+# 22. Testing
 
-An example comparison between Scan #8 and Scan #9 produced:
+The project includes automated tests using Pytest.
 
-    Previous Scan:       #8
-    Current Scan:        #9
+Test execution:
 
-    New Findings:         0
-    Resolved Findings:    0
-    Persistent Findings: 10
+```bash
+pytest -q
+```
 
-    New Services:         0
-    Closed Services:      0
+The current automated test suite has been successfully verified with:
 
-    Previous Risk:       50.0
-    Current Risk:        57.5
+```text
+18 passed
+```
 
-    Risk Change:         +7.5
-    Status:              REGRESSED
+Manual testing has also been performed for major application functions, including:
 
-The comparison functionality allows security posture changes to be tracked across multiple assessments.
-
----
-
-# 28. Security Design
-
-Important security design elements include:
-
-- Password hashing
-- Session-based authentication
-- HTTP-only session cookies
-- SameSite session-cookie configuration
-- Target validation
-- Authentication-protected application pages
-- Authentication-protected assessment APIs
-- Separation of scanning, analysis, risk, remediation, and reporting modules
-
-The application should use a strong secret key in a real deployment.
-
----
-
-# 29. Responsible Use
-
-IntelliScan is intended for authorized security assessment.
-
-Only scan:
-
-- Systems owned by the tester
-- Cybersecurity laboratory systems
-- Educational environments
-- Authorized penetration-testing targets
-- Systems for which explicit permission has been obtained
-
-Do not use IntelliScan to scan systems without authorization.
-
-Unauthorized security scanning may violate organizational policies and applicable laws.
+* Application health
+* Docker operation
+* Authentication
+* Target registration
+* Duplicate target handling
+* Target validation
+* Start Scan functionality
+* Host discovery
+* Port scanning
+* Service discovery
+* Finding detection
+* CVE correlation
+* Risk scoring
+* Remediation generation
+* Database persistence
+* Scan history
+* Historical comparison
+* HTML reporting
+* PDF reporting
+* Offline/unreachable target handling
+* Docker restart behavior
 
 ---
 
-# 30. Limitations
+# 23. Offline Target Handling
 
-The current implementation is primarily designed for an academic and laboratory demonstration.
+nvscan handles unreachable targets gracefully.
 
-Limitations include:
+Example:
 
-- The CVE database is local and limited.
-- The CVE database is not a continuously synchronized NVD feed.
-- Risk scoring is rule-based.
-- The platform is not intended to replace enterprise vulnerability management systems.
-- Remediation guidance requires administrator review.
-- The Flask development server is not a production deployment platform.
-- Advanced authenticated scanning is outside the current scope.
-- Distributed scanning is outside the current scope.
-- Large-scale asset management is outside the current scope.
+```text
+Host discovery complete: 0 live host(s)
 
----
+Normalization complete: 0 result(s)
 
-# 31. Future Scope
+Finding analysis complete: 0 finding(s)
 
-Potential future enhancements include:
+CVE correlation complete: 0 CVE finding(s)
 
-- Live NVD/CVE feed integration
-- CVSS-based scoring
-- EPSS integration
-- Machine-learning-assisted risk prioritization
-- Distributed scanning agents
-- Scheduled scanning
-- Email notifications
-- Role-based access control
-- Multi-user security teams
-- Asset inventory
-- Authenticated web scanning
-- Additional vulnerability detection rules
-- Docker deployment
-- Kubernetes deployment
-- SIEM integration
-- Security orchestration and automated response
-- Cloud asset scanning
-- Advanced executive dashboards
+Risk scoring complete: 0 finding(s)
+
+Remediation guidance generated for 0 finding(s)
+```
+
+The scan completes without crashing the application.
 
 ---
 
-# 32. Academic Information
+# 24. Security Considerations
 
-Project Name:
+The project includes several security-related controls:
 
-IntelliScan – Automated Network Vulnerability Assessment, Risk Prioritization and Remediation Platform
+* Authentication-protected application routes
+* Password hash verification
+* Active-user validation
+* Session clearing during logout
+* HTTPOnly session cookies
+* SameSite cookie configuration
+* Configurable Flask secret key
+* Target validation
+* Authorized-use warning
+* Structured database persistence
+* Docker isolation
 
-Project Type:
-
-Final-Year Cybersecurity Project
-
-Primary Domain:
-
-Cybersecurity / Vulnerability Assessment / Network Security
-
-Primary Technologies:
-
-Python, Flask, SQLite, Nmap, ReportLab, HTML, CSS, JavaScript, Pytest and Git
-
-Primary Purpose:
-
-To automate network security assessment and transform raw network and web scanning results into prioritized security findings, risk scores, remediation guidance, historical comparisons, and professional security reports.
+The application should still be deployed using appropriate production security controls before exposure to an untrusted network.
 
 ---
 
-# 33. Quick Demonstration Procedure
+# 25. Docker Architecture
 
-For a final demonstration:
+The Docker deployment can be represented as:
 
-    1. Start RHEL VM.
-    2. Open terminal.
-    3. Start IntelliScan.
-    4. Open browser.
-    5. Login.
-    6. Open Dashboard.
-    7. Add authorized target.
-    8. Start a scan.
-    9. Show discovered host.
-    10. Show open services.
-    11. Show security findings.
-    12. Show risk scores.
-    13. Show remediation.
-    14. Show historical comparison.
-    15. Open HTML report.
-    16. Generate PDF report.
-    17. Explain architecture.
-    18. Explain risk calculation.
-    19. Explain CVE correlation.
-    20. Explain limitations and future scope.
-
----
-
-# 34. Final Project Status
-
-The current IntelliScan implementation includes:
-
-    [✓] Project structure
-    [✓] Python environment
-    [✓] SQLite database
-    [✓] Target management
-    [✓] Target validation
-    [✓] Nmap discovery
-    [✓] Port scanning
-    [✓] Service detection
-    [✓] Result normalization
-    [✓] Web security scanning
-    [✓] Finding engine
-    [✓] Risk engine
-    [✓] CVE correlation
-    [✓] Remediation engine
-    [✓] Historical comparison
-    [✓] Authentication
-    [✓] Dashboard
-    [✓] Scan history
-    [✓] Scan results
-    [✓] HTML reporting
-    [✓] PDF reporting
-    [✓] API endpoints
-    [✓] Automated tests
-    [✓] Real scan validation
-    [✓] Git version control
+```text
+                    Kali / Browser
+                         |
+                         | HTTP :5000
+                         v
+              +----------------------+
+              |     Docker Host      |
+              |       RHEL 10        |
+              |                      |
+              |  +----------------+  |
+              |  |     nvscan     |  |
+              |  | Flask + Python |  |
+              |  | Nmap            |  |
+              |  +-------+--------+  |
+              |          |           |
+              |          v           |
+              |      SQLite DB       |
+              +----------------------+
+```
 
 ---
 
-# 35. Final Notes
+# 26. Data Flow
 
-IntelliScan demonstrates how multiple cybersecurity assessment activities can be integrated into a single automated platform.
+```text
+                 Authorized Target
+                        |
+                        v
+                Target Validator
+                        |
+                        v
+                 Host Discovery
+                        |
+                        v
+                  Port Scanner
+                        |
+                        v
+                Service Detection
+                        |
+                        v
+                  Web Scanner
+                        |
+                        v
+                Result Normalizer
+                        |
+                        v
+                Finding Engine
+                        |
+                        v
+               CVE Correlator
+                        |
+                        v
+                 Risk Engine
+                        |
+                        v
+              Remediation Engine
+                        |
+                        v
+                 SQLite Database
+                        |
+             +----------+----------+
+             |          |          |
+             v          v          v
+          Dashboard   Reports   Comparison
+```
 
-The main contribution of the project is not only network scanning, but the complete processing pipeline:
+---
 
-    Discovery
-        ↓
-    Detection
-        ↓
-    Risk Prioritization
-        ↓
-    CVE Correlation
-        ↓
-    Remediation
-        ↓
-    Historical Analysis
-        ↓
-    Security Reporting
+# 27. Git Workflow
 
-This transforms raw technical scan information into structured and actionable security assessment results.
+The project is maintained using Git.
+
+Typical workflow:
+
+```bash
+git status
+git add -A
+git commit -m "Describe change"
+git push origin main
+```
+
+The main branch is:
+
+```text
+main
+```
+
+Repository:
+
+```text
+https://github.com/mjishaan59-cell/nvscan
+```
+
+---
+
+# 28. Project Limitations
+
+The current implementation is primarily designed as an academic and controlled security assessment platform.
+
+Potential limitations include:
+
+* Detection coverage depends on implemented rules.
+* CVE correlation depends on the available local vulnerability data.
+* Risk scores are application-specific and are not CVSS scores.
+* Advanced authenticated web application testing is outside the current core workflow.
+* Exploit execution is not part of the core assessment pipeline.
+* Large-scale distributed scanning is outside the current implementation.
+* Production deployments require additional hardening.
+
+---
+
+# 29. Future Enhancements
+
+Potential future improvements include:
+
+* Expanded vulnerability detection rules
+* Larger and regularly updated CVE datasets
+* CVSS integration
+* Authenticated scanning
+* Expanded web vulnerability testing
+* API token authentication
+* Role-based access control
+* Background/asynchronous scanning
+* Scan scheduling
+* Email notifications
+* Advanced dashboards
+* More detailed asset inventory
+* Distributed scanning agents
+* Container image scanning
+* Cloud asset assessment
+* SIEM integration
+* Security alerting
+* Continuous vulnerability monitoring
+
+---
+
+# 30. Academic Value
+
+nvscan demonstrates the integration of multiple cybersecurity concepts into a practical software platform.
+
+The project combines:
+
+```text
+Networking
++
+Vulnerability Assessment
++
+Web Security
++
+Security Automation
++
+Risk Analysis
++
+CVE Correlation
++
+Remediation
++
+Database Engineering
++
+Web Development
++
+Authentication
++
+Containerization
++
+Linux Administration
+```
+
+This makes nvscan suitable for demonstrating practical knowledge across multiple areas of cybersecurity and system administration.
+
+---
+
+# 31. Conclusion
+
+nvscan provides a centralized approach to automated vulnerability assessment.
+
+Instead of treating discovery, service analysis, vulnerability detection, risk analysis, remediation, and reporting as isolated activities, the platform combines them into one workflow.
+
+The completed system demonstrates:
+
+```text
+Discover
+   ↓
+Analyze
+   ↓
+Detect
+   ↓
+Correlate
+   ↓
+Prioritize
+   ↓
+Remediate
+   ↓
+Report
+   ↓
+Compare
+```
+
+The project has been tested through automated tests and manual end-to-end validation and is deployable using Docker.
+
+---
+
+## 32. Authorized Use
+
+nvscan must only be used against systems and applications for which explicit authorization has been obtained.
+
+Do not scan, test, exploit, or otherwise assess systems that you do not own or have permission to assess.
+
+---
+
+**Project:** nvscan
+**Type:** Final-Year Cybersecurity Project
+**Focus:** Automated Network Vulnerability Assessment, Risk Analysis and Remediation
+

@@ -10,7 +10,7 @@ SCHEMA_PATH = Path(__file__).resolve().parent / "schema.sql"
 
 
 class Database:
-    """SQLite database interface for IntelliScan."""
+    """SQLite database interface for nvscan."""
 
     def __init__(self, database_path=DATABASE_PATH):
         self.database_path = Path(database_path)
