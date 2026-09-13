@@ -425,23 +425,14 @@ def create_app():
             normalized_target
         )
 
-        # Check whether the normalized target
-        # already exists before attempting to add it.
-        existing_target = database.get_target_by_value(
-            normalized_target
-        )
-
         target_id = database.add_target(
             normalized_target,
             target_type,
         )
 
-        created = existing_target is None
-
         return jsonify(
             {
                 "success": True,
-                "created": created,
                 "target_id": target_id,
                 "target": normalized_target,
                 "target_type": target_type,
