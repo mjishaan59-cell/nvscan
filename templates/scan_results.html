@@ -1,0 +1,1218 @@
+{% extends "base.html" %}
+
+{% block title %}Scan Results - nvscan{% endblock %}
+
+{% block page_title %}Scan Results{% endblock %}
+
+{% block content %}
+
+<style>
+    .results-section {
+        margin-bottom: 24px;
+    }
+
+    .finding-card {
+        margin-bottom: 24px;
+        overflow: hidden;
+    }
+
+    .finding-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .finding-title {
+        margin: 0 0 8px 0;
+    }
+
+    .finding-description {
+        line-height: 1.65;
+        margin: 0;
+    }
+
+    .finding-meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+    }
+
+    .finding-score {
+        font-size: 24px;
+        font-weight: 700;
+    }
+
+    .risk-score-cell {
+        font-weight: 700;
+    }
+
+    .remediation-box {
+        margin-top: 22px;
+        padding: 20px;
+        border: 1px solid rgba(0, 150, 255, 0.25);
+        border-radius: 10px;
+        background: rgba(0, 150, 255, 0.05);
+    }
+
+    .remediation-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .remediation-header h4 {
+        margin: 0;
+        font-size: 18px;
+    }
+
+    .remediation-action {
+        padding: 14px 16px;
+        margin-bottom: 20px;
+        border-left: 4px solid currentColor;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.03);
+        line-height: 1.6;
+    }
+
+    .remediation-list {
+        margin: 8px 0 20px 0;
+        padding-left: 24px;
+    }
+
+    .remediation-list li {
+        margin-bottom: 9px;
+        line-height: 1.55;
+    }
+
+    .verification-list {
+        list-style: none;
+        padding: 0;
+        margin: 8px 0 0 0;
+    }
+
+    .verification-list li {
+        padding: 8px 0;
+        line-height: 1.5;
+    }
+
+    .verification-list li::before {
+        content: "✓";
+        margin-right: 9px;
+        font-weight: 700;
+    }
+
+    .section-label {
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+        opacity: 0.75;
+    }
+
+    .remediation-count {
+        margin-left: 8px;
+        font-size: 13px;
+        opacity: 0.8;
+    }
+
+    .finding-cve {
+        margin-top: 20px;
+    }
+</style>
+
+<div id="results-message"></div>
+
+{% if scan %}
+
+<div class="page-header">
+
+    <div>
+        <h2>Scan #{{ scan.id }}</h2>
+
+        <p class="page-description">
+            Detailed results from the network vulnerability assessment,
+            risk prioritization and remediation analysis.
+        </p>
+    </div>
+
+    <div>
+        <a
+            href="/scans"
+            class="button button-secondary"
+        >
+            Back to Scan History
+        </a>
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- SUMMARY -->
+<!-- ========================================================= -->
+
+<div class="dashboard-grid results-section">
+
+    <div class="stat-card">
+
+        <div class="stat-label">
+            Target
+        </div>
+
+        <div class="stat-value stat-value-small">
+            {{ scan.target }}
+        </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+        <div class="stat-label">
+            Status
+        </div>
+
+        <div class="stat-value stat-value-small">
+
+            {% if scan.status == "completed" %}
+
+            <span class="badge badge-low">
+                {{ scan.status }}
+            </span>
+
+            {% else %}
+
+            <span class="badge badge-info">
+                {{ scan.status }}
+            </span>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+        <div class="stat-label">
+            Hosts
+        </div>
+
+        <div class="stat-value">
+            {{ hosts|length }}
+        </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+        <div class="stat-label">
+            Findings
+        </div>
+
+        <div class="stat-value">
+            {{ findings|length }}
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- SCAN INFORMATION -->
+<!-- ========================================================= -->
+
+<div class="panel results-section">
+
+    <div class="panel-header">
+
+        <div>
+
+            <h3>Scan Information</h3>
+
+            <p class="panel-description">
+                Basic information about this security assessment.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="table-container">
+
+        <table class="data-table">
+
+            <tbody>
+
+                <tr>
+                    <th>Scan ID</th>
+                    <td>#{{ scan.id }}</td>
+                </tr>
+
+                <tr>
+                    <th>Target</th>
+                    <td>{{ scan.target }}</td>
+                </tr>
+
+                <tr>
+                    <th>Target Type</th>
+                    <td>{{ scan.target_type or "—" }}</td>
+                </tr>
+
+                <tr>
+                    <th>Status</th>
+                    <td>{{ scan.status }}</td>
+                </tr>
+
+                <tr>
+                    <th>Started</th>
+                    <td>{{ scan.started_at or "—" }}</td>
+                </tr>
+
+                <tr>
+                    <th>Completed</th>
+                    <td>{{ scan.completed_at or "—" }}</td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- DISCOVERED HOSTS -->
+<!-- ========================================================= -->
+
+<div class="panel results-section">
+
+    <div class="panel-header">
+
+        <div>
+
+            <h3>Discovered Hosts</h3>
+
+            <p class="panel-description">
+                Hosts identified during the scan.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    {% if hosts %}
+
+    <div class="table-container">
+
+        <table class="data-table">
+
+            <thead>
+
+                <tr>
+                    <th>ID</th>
+                    <th>Address</th>
+                    <th>Type</th>
+                    <th>Hostname</th>
+                    <th>Status</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for host in hosts %}
+
+                <tr>
+
+                    <td>
+                        {{ host.id }}
+                    </td>
+
+                    <td>
+                        <strong>
+                            {{ host.address }}
+                        </strong>
+                    </td>
+
+                    <td>
+                        {{ host.address_type or "—" }}
+                    </td>
+
+                    <td>
+                        {{ host.hostname or "—" }}
+                    </td>
+
+                    <td>
+
+                        {% if host.status == "up" %}
+
+                        <span class="badge badge-low">
+                            {{ host.status }}
+                        </span>
+
+                        {% else %}
+
+                        <span class="badge badge-info">
+                            {{ host.status or "unknown" }}
+                        </span>
+
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    {% else %}
+
+    <div class="empty-state">
+        No hosts were discovered during this scan.
+    </div>
+
+    {% endif %}
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- DETECTED SERVICES -->
+<!-- ========================================================= -->
+
+<div class="panel results-section">
+
+    <div class="panel-header">
+
+        <div>
+
+            <h3>Detected Services</h3>
+
+            <p class="panel-description">
+                Network services and versions identified during the scan.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    {% if services %}
+
+    <div class="table-container">
+
+        <table class="data-table">
+
+            <thead>
+
+                <tr>
+                    <th>Host</th>
+                    <th>Port</th>
+                    <th>Protocol</th>
+                    <th>State</th>
+                    <th>Service</th>
+                    <th>Product</th>
+                    <th>Version</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for service in services %}
+
+                <tr>
+
+                    <td>
+                        {{ service.address }}
+                    </td>
+
+                    <td>
+                        <strong>
+                            {{ service.port }}
+                        </strong>
+                    </td>
+
+                    <td>
+                        {{ service.protocol }}
+                    </td>
+
+                    <td>
+
+                        {% if service.state == "open" %}
+
+                        <span class="badge badge-low">
+                            {{ service.state }}
+                        </span>
+
+                        {% else %}
+
+                        <span class="badge badge-info">
+                            {{ service.state or "unknown" }}
+                        </span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td>
+                        {{ service.service or "—" }}
+                    </td>
+
+                    <td>
+                        {{ service.product or "—" }}
+                    </td>
+
+                    <td>
+                        {{ service.version or "—" }}
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    {% else %}
+
+    <div class="empty-state">
+        No services were detected during this scan.
+    </div>
+
+    {% endif %}
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- SECURITY FINDINGS -->
+<!-- ========================================================= -->
+
+<div class="panel results-section">
+
+    <div class="panel-header">
+
+        <div>
+
+            <h3>Security Findings</h3>
+
+            <p class="panel-description">
+                Security findings identified, risk-scored and prioritized by nvscan.
+                <span class="remediation-count">
+                    Automated remediation guidance is displayed below each applicable finding.
+                </span>
+            </p>
+
+        </div>
+
+    </div>
+
+
+    {% if findings %}
+
+
+    <!-- FINDINGS TABLE -->
+
+    <div class="table-container">
+
+        <table class="data-table">
+
+            <thead>
+
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Severity</th>
+                    <th>Confidence</th>
+                    <th>Host</th>
+                    <th>Port</th>
+                    <th>Risk</th>
+                    <th>Priority</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for finding in findings %}
+
+                <tr>
+
+                    <td>
+                        <strong>
+                            {{ finding.finding_id }}
+                        </strong>
+                    </td>
+
+                    <td>
+                        {{ finding.title }}
+                    </td>
+
+
+                    <!-- Severity -->
+
+                    <td>
+
+                        {% if finding.severity == "CRITICAL" %}
+
+                        <span class="badge badge-critical">
+                            CRITICAL
+                        </span>
+
+                        {% elif finding.severity == "HIGH" %}
+
+                        <span class="badge badge-high">
+                            HIGH
+                        </span>
+
+                        {% elif finding.severity == "MEDIUM" %}
+
+                        <span class="badge badge-medium">
+                            MEDIUM
+                        </span>
+
+                        {% elif finding.severity == "LOW" %}
+
+                        <span class="badge badge-low">
+                            LOW
+                        </span>
+
+                        {% else %}
+
+                        <span class="badge badge-info">
+                            {{ finding.severity or "INFO" }}
+                        </span>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <!-- Confidence -->
+
+                    <td>
+                        {{ finding.confidence or "—" }}
+                    </td>
+
+
+                    <!-- Host -->
+
+                    <td>
+                        {{ finding.host or "—" }}
+                    </td>
+
+
+                    <!-- Port -->
+
+                    <td>
+                        {{ finding.port or "—" }}
+                    </td>
+
+
+                    <!-- Risk -->
+
+                    <td class="risk-score-cell">
+
+                        {% if finding.score is not none %}
+
+                        {{ "%.1f"|format(finding.score|float) }}
+
+                        {% elif finding.risk and finding.risk.score is not none %}
+
+                        {{ "%.1f"|format(finding.risk.score|float) }}
+
+                        {% else %}
+
+                        —
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <!-- Priority -->
+
+                    <td>
+
+                        {% if finding.priority == "CRITICAL" %}
+
+                        <span class="badge badge-critical">
+                            CRITICAL
+                        </span>
+
+                        {% elif finding.priority == "HIGH" %}
+
+                        <span class="badge badge-high">
+                            HIGH
+                        </span>
+
+                        {% elif finding.priority == "MEDIUM" %}
+
+                        <span class="badge badge-medium">
+                            MEDIUM
+                        </span>
+
+                        {% elif finding.priority == "LOW" %}
+
+                        <span class="badge badge-low">
+                            LOW
+                        </span>
+
+                        {% else %}
+
+                        <span class="badge badge-info">
+                            {{ finding.priority or "INFO" }}
+                        </span>
+
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- FINDING DETAILS -->
+    <!-- ===================================================== -->
+
+    <div class="finding-details">
+
+        {% for finding in findings %}
+
+        <div class="panel finding-card">
+
+
+            <!-- FINDING HEADER -->
+
+            <div class="panel-header">
+
+                <div class="finding-card-header">
+
+                    <div>
+
+                        <h3 class="finding-title">
+                            {{ finding.finding_id }}
+                            —
+                            {{ finding.title }}
+                        </h3>
+
+                        <p class="finding-description">
+                            {{ finding.description or "No description available." }}
+                        </p>
+
+
+                        <div class="finding-meta">
+
+                            {% if finding.severity == "CRITICAL" %}
+
+                            <span class="badge badge-critical">
+                                CRITICAL
+                            </span>
+
+                            {% elif finding.severity == "HIGH" %}
+
+                            <span class="badge badge-high">
+                                HIGH
+                            </span>
+
+                            {% elif finding.severity == "MEDIUM" %}
+
+                            <span class="badge badge-medium">
+                                MEDIUM
+                            </span>
+
+                            {% elif finding.severity == "LOW" %}
+
+                            <span class="badge badge-low">
+                                LOW
+                            </span>
+
+                            {% else %}
+
+                            <span class="badge badge-info">
+                                {{ finding.severity or "INFO" }}
+                            </span>
+
+                            {% endif %}
+
+
+                            {% if finding.priority %}
+
+                            <span class="badge badge-info">
+                                Priority: {{ finding.priority }}
+                            </span>
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+
+                    <div>
+
+                        <div class="stat-label">
+                            Risk Score
+                        </div>
+
+                        <div class="finding-score">
+
+                            {% if finding.score is not none %}
+
+                            {{ "%.1f"|format(finding.score|float) }}
+
+                            {% elif finding.risk and finding.risk.score is not none %}
+
+                            {{ "%.1f"|format(finding.risk.score|float) }}
+
+                            {% else %}
+
+                            —
+
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- TECHNICAL DETAILS -->
+
+            <div class="table-container">
+
+                <table class="data-table">
+
+                    <tbody>
+
+                        <tr>
+                            <th>Finding ID</th>
+                            <td>{{ finding.finding_id }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Severity</th>
+                            <td>{{ finding.severity or "—" }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Confidence</th>
+                            <td>{{ finding.confidence or "—" }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Risk Score</th>
+                            <td>
+
+                                {% if finding.score is not none %}
+
+                                {{ "%.1f"|format(finding.score|float) }}
+
+                                {% elif finding.risk and finding.risk.score is not none %}
+
+                                {{ "%.1f"|format(finding.risk.score|float) }}
+
+                                {% else %}
+
+                                —
+
+                                {% endif %}
+
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th>Priority</th>
+                            <td>{{ finding.priority or "—" }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Exposure</th>
+                            <td>{{ finding.exposure or "NETWORK" }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Host</th>
+                            <td>{{ finding.host or "—" }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Port</th>
+                            <td>{{ finding.port or "—" }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Service</th>
+                            <td>{{ finding.service or "—" }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Product</th>
+                            <td>{{ finding.product or "—" }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Version</th>
+                            <td>{{ finding.version or "—" }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Recommendation</th>
+                            <td>{{ finding.recommendation or "—" }}</td>
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- EVIDENCE -->
+            <!-- ================================================= -->
+
+            {% if finding.evidence %}
+
+            <div class="remediation-box">
+
+                <div class="section-label">
+                    Detection Evidence
+                </div>
+
+
+                {% if finding.evidence is string %}
+
+                <p class="finding-description">
+                    {{ finding.evidence }}
+                </p>
+
+
+                {% elif finding.evidence is mapping %}
+
+                <table class="data-table">
+
+                    <tbody>
+
+                        {% for key, value in finding.evidence.items() %}
+
+                        <tr>
+
+                            <th>
+                                {{ key }}
+                            </th>
+
+                            <td>
+                                {{ value }}
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+
+                {% else %}
+
+                <p class="finding-description">
+                    {{ finding.evidence }}
+                </p>
+
+                {% endif %}
+
+            </div>
+
+            {% endif %}
+
+
+            <!-- ================================================= -->
+            <!-- REMEDIATION -->
+            <!-- ================================================= -->
+
+            {% if finding.remediation %}
+
+            <div class="remediation-box">
+
+                <div class="remediation-header">
+
+                    <h4>
+                        🛠 Remediation Guidance
+                    </h4>
+
+                </div>
+
+
+                <!-- ACTION -->
+
+                {% if finding.remediation.action %}
+
+                <div>
+
+                    <div class="section-label">
+                        Recommended Action
+                    </div>
+
+                    <div class="remediation-action">
+                        {{ finding.remediation.action }}
+                    </div>
+
+                </div>
+
+                {% endif %}
+
+
+                <!-- REMEDIATION STEPS -->
+
+                {% if finding.remediation.steps %}
+
+                <div>
+
+                    <div class="section-label">
+                        Remediation Steps
+                    </div>
+
+                    <ol class="remediation-list">
+
+                        {% for step in finding.remediation.steps %}
+
+                        <li>
+                            {{ step }}
+                        </li>
+
+                        {% endfor %}
+
+                    </ol>
+
+                </div>
+
+                {% endif %}
+
+
+                <!-- VERIFICATION -->
+
+                {% if finding.remediation.verification %}
+
+                <div>
+
+                    <div class="section-label">
+                        Verification Steps
+                    </div>
+
+                    <ul class="verification-list">
+
+                        {% for check in finding.remediation.verification %}
+
+                        <li>
+                            {{ check }}
+                        </li>
+
+                        {% endfor %}
+
+                    </ul>
+
+                </div>
+
+                {% endif %}
+
+
+                <!-- REMEDIATION METADATA -->
+
+                {% if finding.remediation.cve_id
+                   or finding.remediation.cvss is not none
+                   or finding.remediation.product
+                   or finding.remediation.version %}
+
+                <div class="table-container finding-cve">
+
+                    <table class="data-table">
+
+                        <tbody>
+
+                            {% if finding.remediation.cve_id %}
+
+                            <tr>
+                                <th>CVE</th>
+                                <td>
+                                    {{ finding.remediation.cve_id }}
+                                </td>
+                            </tr>
+
+                            {% endif %}
+
+
+                            {% if finding.remediation.cvss is not none %}
+
+                            <tr>
+                                <th>CVSS</th>
+                                <td>
+                                    {{ finding.remediation.cvss }}
+                                </td>
+                            </tr>
+
+                            {% endif %}
+
+
+                            {% if finding.remediation.product %}
+
+                            <tr>
+                                <th>Affected Product</th>
+                                <td>
+                                    {{ finding.remediation.product }}
+                                </td>
+                            </tr>
+
+                            {% endif %}
+
+
+                            {% if finding.remediation.version %}
+
+                            <tr>
+                                <th>Affected Version</th>
+                                <td>
+                                    {{ finding.remediation.version }}
+                                </td>
+                            </tr>
+
+                            {% endif %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                {% endif %}
+
+            </div>
+
+
+            {% else %}
+
+            <div class="remediation-box">
+
+                <div class="remediation-header">
+
+                    <h4>
+                        Remediation Guidance
+                    </h4>
+
+                </div>
+
+                <p class="finding-description">
+                    No automated remediation guidance is available
+                    for this finding.
+                </p>
+
+            </div>
+
+            {% endif %}
+
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+
+    {% else %}
+
+    <div class="empty-state">
+
+        <p>
+            No security findings were generated for this scan.
+        </p>
+
+        <p>
+            The current detection rules did not identify any
+            security issues in the scanned target.
+        </p>
+
+    </div>
+
+    {% endif %}
+
+</div>
+
+
+{% else %}
+
+<!-- ========================================================= -->
+<!-- SCAN NOT FOUND -->
+<!-- ========================================================= -->
+
+<div class="page-header">
+
+    <div>
+
+        <h2>
+            Scan Not Found
+        </h2>
+
+        <p class="page-description">
+            The requested scan does not exist in the nvscan database.
+        </p>
+
+    </div>
+
+</div>
+
+
+<div class="panel">
+
+    <div class="empty-state">
+
+        <p>
+            The scan ID you requested could not be found.
+        </p>
+
+        <a
+            href="/scans"
+            class="button button-primary"
+        >
+            Return to Scan History
+        </a>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+{% endblock %}

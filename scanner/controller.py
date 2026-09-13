@@ -10,6 +10,8 @@ from web_scanner.http_scanner import HTTPScanner
 from web_scanner.directory_enum import DirectoryEnumerator
 
 from risk_engine.scorer import RiskScorer
+from vulnerability_engine.correlator import CVECorrelator
+from remediation_engine.engine import RemediationEngine
 
 
 class ScanController:
@@ -26,6 +28,8 @@ class ScanController:
         self.normalizer = ResultNormalizer()
         self.finding_engine = FindingEngine()
         self.risk_scorer = RiskScorer()
+        self.cve_correlator = CVECorrelator()
+        self.remediation_engine = RemediationEngine()
 
         self.database = Database()
 
@@ -37,10 +41,7 @@ class ScanController:
         print("\n===== NVSCAN STARTED =====")
         print(f"Target: {target}")
 
-        # -------------------------------------------------
         # 0. Create target and scan records
-        # -------------------------------------------------
-
         target_type = self._detect_target_type(target)
 
         try:
@@ -66,12 +67,8 @@ class ScanController:
         print(f"Database target ID: {target_id}")
         print(f"Database scan ID: {scan_id}")
 
-        # -------------------------------------------------
         # 1. Host Discovery
-        # -------------------------------------------------
-
-        print("\n[1/7] Running host discovery...")
-
+        print("\n[1/8] Running host discovery...")
         discovery_result = self.discovery.discover(target)
 
         if not discovery_result["success"]:
@@ -96,12 +93,8 @@ class ScanController:
             f"{len(hosts)} live host(s)"
         )
 
-        # -------------------------------------------------
         # 2. Port Scanning
-        # -------------------------------------------------
-
-        print("\n[2/7] Running port scan...")
-
+        print("\n[2/8] Running port scan...")
         port_result = self.port_scanner.scan(target)
 
         if not port_result["success"]:
@@ -121,12 +114,8 @@ class ScanController:
 
         print("Port scanning complete.")
 
-        # -------------------------------------------------
         # 3. Service Detection
-        # -------------------------------------------------
-
-        print("\n[3/7] Running service detection...")
-
+        print("\n[3/8] Running service detection...")
         service_result = self.service_detector.detect(target)
 
         if not service_result["success"]:
@@ -146,18 +135,12 @@ class ScanController:
 
         print("Service detection complete.")
 
-        # -------------------------------------------------
         # 4. HTTP and Directory Enumeration
-        # -------------------------------------------------
-
-        print("\n[4/7] Running web scanning...")
-
+        print("\n[4/8] Running web scanning...")
         normalized_results = []
 
         for host in service_result["hosts"]:
-
             for port in host.get("ports", []):
-
                 if port["state"] != "open":
                     continue
 
@@ -169,15 +152,11 @@ class ScanController:
                     "http",
                     "http-alt",
                 }:
-
                     address = None
 
                     for item in host.get("addresses", []):
-
                         if item.get("type") == "ipv4":
-                            address = item.get(
-                                "address"
-                            )
+                            address = item.get("address")
                             break
 
                     if (
@@ -191,9 +170,7 @@ class ScanController:
                     if address is None:
                         continue
 
-                    http_result = (
-                        self.http_scanner.scan(address)
-                    )
+                    http_result = self.http_scanner.scan(address)
 
                     normalized_results.extend(
                         self.normalizer.normalize_http(
@@ -215,14 +192,10 @@ class ScanController:
 
         print("Web scanning complete.")
 
-        # -------------------------------------------------
         # 5. Normalize Nmap Results
-        # -------------------------------------------------
-
-        print("\n[5/7] Normalizing scan results...")
+        print("\n[5/8] Normalizing scan results...")
 
         for host in service_result["hosts"]:
-
             normalized_results.extend(
                 self.normalizer.normalize_nmap(
                     {
@@ -236,12 +209,8 @@ class ScanController:
             f"{len(normalized_results)} result(s)"
         )
 
-        # -------------------------------------------------
         # 6. Finding Analysis
-        # -------------------------------------------------
-
-        print("\n[6/7] Analyzing findings...")
-
+        print("\n[6/8] Analyzing findings...")
         findings = self.finding_engine.analyze(
             normalized_results
         )
@@ -251,20 +220,61 @@ class ScanController:
             f"{len(findings)} finding(s)"
         )
 
-        # -------------------------------------------------
-        # 7. Risk Scoring
-        # -------------------------------------------------
+        # 7. CVE Correlation
+        print("\n[7/8] Checking for known CVEs...")
 
-        print("\n[7/7] Calculating risk scores...")
+        cve_findings = []
+        seen_cves = set()
+
+        for result in normalized_results:
+            if result.get("type") != "service":
+                continue
+
+            matches = self.cve_correlator.correlate(result)
+
+            for finding in matches:
+                key = (
+                    finding.get("finding_id"),
+                    finding.get("host"),
+                    finding.get("port"),
+                    finding.get("product"),
+                    finding.get("version"),
+                )
+
+                if key in seen_cves:
+                    continue
+
+                seen_cves.add(key)
+                cve_findings.append(finding)
+
+        print(
+            f"CVE correlation complete: "
+            f"{len(cve_findings)} CVE finding(s)"
+        )
+
+        findings.extend(cve_findings)
+
+        print(
+            f"Total findings after CVE correlation: "
+            f"{len(findings)}"
+        )
+
+        # 8. Risk Scoring and Remediation
+        print("\n[8/8] Calculating risk scores...")
 
         scored_findings = []
 
         for finding in findings:
-
             scored = self.risk_scorer.score_finding(
                 finding,
                 exposure="NETWORK",
             )
+
+            remediation = self.remediation_engine.generate(
+                scored
+            )
+
+            scored["remediation"] = remediation
 
             scored_findings.append(scored)
 
@@ -273,10 +283,12 @@ class ScanController:
             f"{len(scored_findings)} finding(s)"
         )
 
-        # -------------------------------------------------
-        # 8. Save Hosts and Services
-        # -------------------------------------------------
+        print(
+            f"Remediation guidance generated for "
+            f"{len(scored_findings)} finding(s)"
+        )
 
+        # 9. Save Hosts and Services
         print("\n[DB] Saving hosts and services...")
 
         self._save_hosts_and_services(
@@ -284,10 +296,7 @@ class ScanController:
             service_result["hosts"],
         )
 
-        # -------------------------------------------------
-        # 9. Save Findings and Risk Scores
-        # -------------------------------------------------
-
+        # 10. Save Findings and Risk Scores
         print("[DB] Saving findings and risk scores...")
 
         self._save_findings(
@@ -295,17 +304,13 @@ class ScanController:
             scored_findings,
         )
 
-        # -------------------------------------------------
-        # 10. Mark Scan Completed
-        # -------------------------------------------------
-
+        # 11. Mark Scan Completed
         self.database.update_scan_status(
             scan_id,
             "completed",
         )
 
         print("\n[DB] Scan results saved successfully.")
-
         print("\n===== NVSCAN COMPLETED =====")
 
         return {
@@ -347,7 +352,6 @@ class ScanController:
         """Save discovered hosts and services."""
 
         for host in hosts:
-
             hostname = None
 
             if host.get("hostnames"):
@@ -359,7 +363,6 @@ class ScanController:
                 "addresses",
                 [],
             ):
-
                 host_id = self.database.add_host(
                     scan_id=scan_id,
                     address=address.get("address"),
@@ -374,7 +377,6 @@ class ScanController:
                     "ports",
                     [],
                 ):
-
                     self.database.add_service(
                         host_id=host_id,
                         port=port.get("port"),
@@ -447,6 +449,9 @@ class ScanController:
                     recommendation=finding.get(
                         "recommendation"
                     ),
+                    remediation=finding.get(
+                        "remediation"
+                    ),
                 )
             )
 
@@ -477,12 +482,10 @@ if __name__ == "__main__":
     result = controller.scan(target)
 
     if not result["success"]:
-
         print("\n===== NVSCAN FAILED =====")
         print(
             f"Reason: {result['error']}"
         )
-
         raise SystemExit(1)
 
     print("\n===== FINAL RESULTS =====")
@@ -510,9 +513,13 @@ if __name__ == "__main__":
     print("\nFindings:")
 
     for finding in result["findings"]:
-
         risk = finding.get(
             "risk",
+            {},
+        )
+
+        remediation = finding.get(
+            "remediation",
             {},
         )
 
@@ -523,3 +530,9 @@ if __name__ == "__main__":
             f"Risk: {risk.get('score')} | "
             f"Priority: {risk.get('priority')}"
         )
+
+        if remediation:
+            print(
+                f"  Remediation: "
+                f"{remediation.get('action')}"
+            )

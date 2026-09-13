@@ -373,6 +373,7 @@ function escapeHtml(value) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+
 }
 
 
@@ -387,9 +388,12 @@ async function loadScans() {
         const data = await response.json();
 
         if (!response.ok || !data.success) {
+
             throw new Error(
-                data.error || "Unable to load scans."
+                data.error ||
+                "Unable to load scans."
             );
+
         }
 
         scanSelect.innerHTML =
@@ -431,6 +435,7 @@ async function loadScans() {
         );
 
     }
+
 }
 
 
@@ -447,6 +452,7 @@ async function generateReport() {
         );
 
         return;
+
     }
 
     hideMessage();
@@ -500,125 +506,169 @@ async function generateReport() {
             "Generate Report";
 
     }
+
 }
 
 
 function renderReport(data) {
 
+    /*
+     * The API returns the complete generated report
+     * inside data.report.
+     *
+     * Therefore all report fields must be read from
+     * data.report.
+     */
+
     const report =
-        data.report;
+        data.report || {};
 
     const executive =
-        data.executive_summary;
+        report.executive_summary || {};
 
     const statistics =
-        data.statistics;
+        report.statistics || {};
+
+    const risk =
+        statistics.risk || {};
+
+    const severity =
+        statistics.severity || {};
+
+    const services =
+        report.services || [];
+
+    const findings =
+        report.findings || [];
+
+    const recommendations =
+        report.recommendations || [];
 
     document.getElementById(
         "report-title"
     ).textContent =
-        report.title || "Security Assessment Report";
+        report.report?.title ||
+        report.title ||
+        "Security Assessment Report";
 
     document.getElementById(
         "report-target"
     ).textContent =
-        `Target: ${report.target || "Unknown"}`;
+        `Target: ${
+            report.report?.target ||
+            report.target ||
+            "Unknown"
+        }`;
 
     document.getElementById(
         "report-status"
     ).textContent =
-        report.status || "Unknown";
+        report.report?.status ||
+        report.status ||
+        "Unknown";
 
     document.getElementById(
         "stat-hosts"
     ).textContent =
-        statistics.hosts;
+        statistics.hosts || 0;
 
     document.getElementById(
         "stat-services"
     ).textContent =
-        statistics.services;
+        statistics.services || 0;
 
     document.getElementById(
         "stat-findings"
     ).textContent =
-        statistics.findings;
+        statistics.findings || 0;
 
     document.getElementById(
         "stat-risk"
     ).textContent =
-        statistics.risk.maximum_score;
+        risk.maximum_score ?? 0;
 
     document.getElementById(
         "executive-summary"
     ).textContent =
-        executive.summary;
+        executive.summary || "";
 
     document.getElementById(
         "info-scan-id"
     ).textContent =
-        report.scan_id;
+        report.report?.scan_id ||
+        report.scan_id ||
+        "-";
 
     document.getElementById(
         "info-target"
     ).textContent =
-        report.target;
+        report.report?.target ||
+        report.target ||
+        "-";
 
     document.getElementById(
         "info-target-type"
     ).textContent =
-        report.target_type;
+        report.report?.target_type ||
+        report.target_type ||
+        "-";
 
     document.getElementById(
         "info-started"
     ).textContent =
-        report.started_at || "-";
+        report.report?.started_at ||
+        report.started_at ||
+        "-";
 
     document.getElementById(
         "info-completed"
     ).textContent =
-        report.completed_at || "-";
+        report.report?.completed_at ||
+        report.completed_at ||
+        "-";
 
     document.getElementById(
         "info-status"
     ).textContent =
-        report.status;
+        report.report?.status ||
+        report.status ||
+        "-";
 
     document.getElementById(
         "risk-average"
     ).textContent =
-        statistics.risk.average_score;
+        risk.average_score ?? 0;
 
     document.getElementById(
         "risk-maximum"
     ).textContent =
-        statistics.risk.maximum_score;
+        risk.maximum_score ?? 0;
 
     document.getElementById(
         "risk-minimum"
     ).textContent =
-        statistics.risk.minimum_score;
+        risk.minimum_score ?? 0;
 
     renderSeverity(
-        statistics.severity
+        severity
     );
 
     renderServices(
-        data.services
+        services
     );
 
     renderFindings(
-        data.findings
+        findings
     );
 
     renderRecommendations(
-        data.recommendations
+        recommendations
     );
 
     document.getElementById(
         "report-conclusion"
     ).textContent =
-        data.conclusion;
+        report.conclusion || "";
 
 }
 
@@ -647,7 +697,9 @@ function renderSeverity(severity) {
 
         row.innerHTML = `
             <td>${escapeHtml(level)}</td>
-            <td>${escapeHtml(severity[level] || 0)}</td>
+            <td>${escapeHtml(
+                severity[level] || 0
+            )}</td>
         `;
 
         table.appendChild(row);
@@ -672,6 +724,7 @@ function renderServices(services) {
             '<tr><td colspan="7">No services detected.</td></tr>';
 
         return;
+
     }
 
     services.forEach(service => {
@@ -680,13 +733,33 @@ function renderServices(services) {
             document.createElement("tr");
 
         row.innerHTML = `
-            <td>${escapeHtml(service.address)}</td>
-            <td>${escapeHtml(service.port)}</td>
-            <td>${escapeHtml(service.protocol)}</td>
-            <td>${escapeHtml(service.service)}</td>
-            <td>${escapeHtml(service.product || "-")}</td>
-            <td>${escapeHtml(service.version || "-")}</td>
-            <td>${escapeHtml(service.state)}</td>
+            <td>${escapeHtml(
+                service.address
+            )}</td>
+
+            <td>${escapeHtml(
+                service.port
+            )}</td>
+
+            <td>${escapeHtml(
+                service.protocol
+            )}</td>
+
+            <td>${escapeHtml(
+                service.service
+            )}</td>
+
+            <td>${escapeHtml(
+                service.product || "-"
+            )}</td>
+
+            <td>${escapeHtml(
+                service.version || "-"
+            )}</td>
+
+            <td>${escapeHtml(
+                service.state
+            )}</td>
         `;
 
         table.appendChild(row);
@@ -711,6 +784,7 @@ function renderFindings(findings) {
             '<div class="empty-state">No security findings were generated.</div>';
 
         return;
+
     }
 
     findings.forEach(finding => {
@@ -726,75 +800,107 @@ function renderFindings(findings) {
 
         card.innerHTML = `
             <div class="finding-header">
+
                 <div>
                     <h4>
-                        ${escapeHtml(finding.finding_id)}
+                        ${escapeHtml(
+                            finding.finding_id
+                        )}
                         -
-                        ${escapeHtml(finding.title)}
+                        ${escapeHtml(
+                            finding.title
+                        )}
                     </h4>
                 </div>
 
                 <div class="finding-badges">
+
                     <span class="badge">
-                        ${escapeHtml(finding.severity)}
+                        ${escapeHtml(
+                            finding.severity
+                        )}
                     </span>
 
                     <span class="badge">
-                        ${escapeHtml(finding.priority)}
+                        ${escapeHtml(
+                            finding.priority
+                        )}
                     </span>
+
                 </div>
+
             </div>
 
             <p>
-                ${escapeHtml(finding.description)}
+                ${escapeHtml(
+                    finding.description
+                )}
             </p>
 
             <div class="finding-details">
 
                 <div>
                     <strong>Host:</strong>
-                    ${escapeHtml(finding.host || "-")}
+                    ${escapeHtml(
+                        finding.host || "-"
+                    )}
                 </div>
 
                 <div>
                     <strong>Port:</strong>
-                    ${escapeHtml(finding.port || "-")}
+                    ${escapeHtml(
+                        finding.port || "-"
+                    )}
                 </div>
 
                 <div>
                     <strong>Service:</strong>
-                    ${escapeHtml(finding.service || "-")}
+                    ${escapeHtml(
+                        finding.service || "-"
+                    )}
                 </div>
 
                 <div>
                     <strong>Product:</strong>
-                    ${escapeHtml(finding.product || "-")}
+                    ${escapeHtml(
+                        finding.product || "-"
+                    )}
                 </div>
 
                 <div>
                     <strong>Version:</strong>
-                    ${escapeHtml(finding.version || "-")}
+                    ${escapeHtml(
+                        finding.version || "-"
+                    )}
                 </div>
 
                 <div>
                     <strong>Confidence:</strong>
-                    ${escapeHtml(finding.confidence || "-")}
+                    ${escapeHtml(
+                        finding.confidence || "-"
+                    )}
                 </div>
 
                 <div>
                     <strong>Risk Score:</strong>
-                    ${escapeHtml(finding.score ?? 0)}
+                    ${escapeHtml(
+                        finding.score ?? 0
+                    )}
                 </div>
 
                 <div>
                     <strong>Exposure:</strong>
-                    ${escapeHtml(finding.exposure || "-")}
+                    ${escapeHtml(
+                        finding.exposure || "-"
+                    )}
                 </div>
 
             </div>
 
             <div class="finding-section">
+
                 <strong>Evidence</strong>
+
                 <pre>${escapeHtml(
                     JSON.stringify(
                         evidence,
@@ -802,15 +908,19 @@ function renderFindings(findings) {
                         2
                     )
                 )}</pre>
+
             </div>
 
             <div class="finding-section">
+
                 <strong>Recommendation</strong>
+
                 <p>
                     ${escapeHtml(
                         finding.recommendation || "-"
                     )}
                 </p>
+
             </div>
         `;
 
@@ -838,6 +948,7 @@ function renderRecommendations(
             '<div class="empty-state">No recommendations available.</div>';
 
         return;
+
     }
 
     const list =
@@ -876,15 +987,19 @@ downloadButton.addEventListener(
             scanSelect.value;
 
         if (!scanId) {
+
             showMessage(
                 "Please select a completed scan.",
                 "error"
             );
+
             return;
+
         }
 
         window.location.href =
             `/api/reports/${scanId}/html`;
+
     }
 );
 

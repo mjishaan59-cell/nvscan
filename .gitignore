@@ -1,12 +1,37 @@
-.venv/
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# SQLite runtime database
+nvscan.db
 *.db
 *.sqlite
 *.sqlite3
-.env
-.pytest_cache/
-reports/generated/
-nmap-results/
-*.xml
+
+# Logs
 *.log
+
+# Generated reports
+reports/*.html
+reports/*.pdf
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+
+# Editor files
+.vim/
+*.swp
+*.swo

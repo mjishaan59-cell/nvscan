@@ -1,86 +1,128 @@
 {% extends "base.html" %}
 
-{% block title %}
-nvscan - Dashboard
-{% endblock %}
-
-{% block page_title %}
-Dashboard
-{% endblock %}
-
 {% block content %}
 
 <div class="dashboard-grid">
 
     <div class="stat-card">
-        <div class="stat-label">
-            Total Targets
-        </div>
-
-        <div
-            class="stat-value"
-            id="total-targets"
-        >
-            —
-        </div>
-
+        <div class="stat-label">Total Targets</div>
+        <div class="stat-value" id="total-targets">0</div>
         <div class="stat-description">
-            Registered scan targets
+            Registered assessment targets
         </div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-label">
-            Total Scans
-        </div>
-
-        <div
-            class="stat-value"
-            id="total-scans"
-        >
-            —
-        </div>
-
+        <div class="stat-label">Total Scans</div>
+        <div class="stat-value" id="total-scans">0</div>
         <div class="stat-description">
             Completed and recorded scans
         </div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-label">
-            Findings
-        </div>
-
-        <div
-            class="stat-value"
-            id="total-findings"
-        >
-            —
-        </div>
-
+        <div class="stat-label">Findings</div>
+        <div class="stat-value" id="total-findings">0</div>
         <div class="stat-description">
-            Security observations
+            Security findings discovered
         </div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-label">
-            High Risk
-        </div>
-
-        <div
-            class="stat-value"
-            id="high-risk"
-        >
-            —
-        </div>
-
+        <div class="stat-label">High Risk</div>
+        <div class="stat-value" id="high-risk">0</div>
         <div class="stat-description">
-            High and critical findings
+            High and critical priority findings
         </div>
     </div>
 
 </div>
+
+
+<div class="panel">
+
+    <div class="panel-header">
+
+        <h2 class="panel-title">
+            Security Overview
+        </h2>
+
+        <button
+            type="button"
+            class="button button-primary"
+            id="refresh-dashboard"
+        >
+            Refresh
+        </button>
+
+    </div>
+
+    <div class="panel-body">
+
+        <div class="dashboard-grid">
+
+            <div class="stat-card">
+                <div class="stat-label">
+                    Assessment Status
+                </div>
+
+                <div class="stat-value" id="assessment-status">
+                    Ready
+                </div>
+
+                <div class="stat-description">
+                    IntelliScan assessment engine
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">
+                    Risk Monitoring
+                </div>
+
+                <div class="stat-value" id="risk-status">
+                    Active
+                </div>
+
+                <div class="stat-description">
+                    Risk scoring and prioritization
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">
+                    CVE Correlation
+                </div>
+
+                <div class="stat-value">
+                    Active
+                </div>
+
+                <div class="stat-description">
+                    Known vulnerability correlation
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">
+                    Last Updated
+                </div>
+
+                <div class="stat-value" id="last-updated">
+                    —
+                </div>
+
+                <div class="stat-description">
+                    Dashboard data refresh time
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
 
 <div class="panel">
 
@@ -90,20 +132,71 @@ Dashboard
             Recent Scans
         </h2>
 
+        <a
+            href="/scans"
+            class="button button-primary"
+        >
+            Scan History
+        </a>
+
     </div>
 
     <div class="panel-body">
 
-        <div
-            id="recent-scans"
-            class="empty-state"
-        >
-            Loading scan history...
+        <div id="recent-scans">
+
+            <div class="empty-state">
+                Loading scan history...
+            </div>
+
         </div>
 
     </div>
 
 </div>
+
+
+<div class="panel">
+
+    <div class="panel-header">
+
+        <h2 class="panel-title">
+            Quick Actions
+        </h2>
+
+    </div>
+
+    <div class="panel-body">
+
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+
+            <a
+                href="/targets"
+                class="button button-primary"
+            >
+                Manage Targets
+            </a>
+
+            <a
+                href="/scans"
+                class="button button-primary"
+            >
+                View Scan History
+            </a>
+
+            <a
+                href="/reports"
+                class="button button-primary"
+            >
+                View Reports
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
 
 <div class="panel">
 
@@ -117,42 +210,63 @@ Dashboard
 
     <div class="panel-body">
 
-        <table class="data-table">
+        <div class="table-container">
 
-            <tbody>
+            <table class="data-table">
 
-                <tr>
-                    <td>Application</td>
-                    <td>nvscan</td>
-                </tr>
+                <tbody>
 
-                <tr>
-                    <td>Scanner Engine</td>
-                    <td>Nmap</td>
-                </tr>
+                    <tr>
+                        <th>Application</th>
+                        <td>IntelliScan</td>
+                    </tr>
 
-                <tr>
-                    <td>Web Framework</td>
-                    <td>Flask</td>
-                </tr>
+                    <tr>
+                        <th>Purpose</th>
+                        <td>
+                            Automated Network Vulnerability Assessment
+                        </td>
+                    </tr>
 
-                <tr>
-                    <td>Database</td>
-                    <td>SQLite</td>
-                </tr>
+                    <tr>
+                        <th>Scanner</th>
+                        <td>Nmap</td>
+                    </tr>
 
-                <tr>
-                    <td>API Status</td>
-                    <td>
-                        <span class="badge badge-low">
-                            Online
-                        </span>
-                    </td>
-                </tr>
+                    <tr>
+                        <th>Finding Engine</th>
+                        <td>Active</td>
+                    </tr>
 
-            </tbody>
+                    <tr>
+                        <th>Risk Engine</th>
+                        <td>Active</td>
+                    </tr>
 
-        </table>
+                    <tr>
+                        <th>CVE Correlation</th>
+                        <td>Active</td>
+                    </tr>
+
+                    <tr>
+                        <th>Database</th>
+                        <td>SQLite</td>
+                    </tr>
+
+                    <tr>
+                        <th>API</th>
+                        <td>
+                            <span class="badge badge-low">
+                                Online
+                            </span>
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
 
     </div>
 

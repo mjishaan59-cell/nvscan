@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+
+{% block title %}Scan Comparison - IntelliScan{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1>Historical Scan Comparison</h1>
+        <p>Compare security posture changes between two completed scans.</p>
+    </div>
+
+    <a href="/scans" class="button">
+        Back to Scan History
+    </a>
+</div>
+
+
+<!-- Loading -->
+<div id="comparison-loading" class="message message-info">
+    Loading scan comparison...
+</div>
+
+
+<!-- Error -->
+<div id="comparison-error" class="message message-error" style="display: none;">
+    Unable to load comparison.
+</div>
+
+
+<!-- Main Comparison -->
+<div id="comparison-content" style="display: none;">
+
+    <!-- Scan Overview -->
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">Scan Overview</h2>
+        </div>
+
+        <div class="panel-body">
+
+            <div class="dashboard-grid">
+
+                <div class="stat-card">
+                    <div class="stat-label">Previous Scan</div>
+                    <div class="stat-value" id="previous-scan">-</div>
+                    <div class="stat-description" id="previous-date">
+                        -
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Current Scan</div>
+                    <div class="stat-value" id="current-scan">-</div>
+                    <div class="stat-description" id="current-date">
+                        -
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Findings Changed</div>
+                    <div class="stat-value" id="findings-changed">0</div>
+                    <div class="stat-description">
+                        New + Resolved
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Overall Status</div>
+                    <div class="stat-value" id="overall-status">-</div>
+                    <div class="stat-description">
+                        Security posture
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- Risk Comparison -->
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">Risk Comparison</h2>
+        </div>
+
+        <div class="panel-body">
+
+            <div class="dashboard-grid">
+
+                <div class="stat-card">
+                    <div class="stat-label">Previous Risk</div>
+                    <div class="stat-value" id="previous-risk">
+                        0.0
+                    </div>
+                    <div class="stat-description">
+                        Maximum risk score
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Current Risk</div>
+                    <div class="stat-value" id="current-risk">
+                        0.0
+                    </div>
+                    <div class="stat-description">
+                        Maximum risk score
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Risk Change</div>
+                    <div class="stat-value" id="risk-change">
+                        0.0
+                    </div>
+                    <div class="stat-description">
+                        Current - Previous
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Risk Status</div>
+                    <div class="stat-value" id="risk-status">
+                        -
+                    </div>
+                    <div class="stat-description">
+                        Assessment result
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- Finding Summary -->
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">Finding Changes</h2>
+        </div>
+
+        <div class="panel-body">
+
+            <div class="dashboard-grid">
+
+                <div class="stat-card">
+                    <div class="stat-label">New Findings</div>
+                    <div class="stat-value" id="new-findings-count">
+                        0
+                    </div>
+                    <div class="stat-description">
+                        Newly detected
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Resolved Findings</div>
+                    <div class="stat-value" id="resolved-findings-count">
+                        0
+                    </div>
+                    <div class="stat-description">
+                        No longer detected
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Persistent Findings</div>
+                    <div class="stat-value" id="persistent-findings-count">
+                        0
+                    </div>
+                    <div class="stat-description">
+                        Still present
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Total Current Findings</div>
+                    <div class="stat-value" id="current-findings-count">
+                        0
+                    </div>
+                    <div class="stat-description">
+                        Current scan
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- New Findings -->
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">New Findings</h2>
+        </div>
+
+        <div class="panel-body">
+
+            <div id="new-findings-container">
+                <div class="empty-state">
+                    No new findings detected.
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- Resolved Findings -->
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">Resolved Findings</h2>
+        </div>
+
+        <div class="panel-body">
+
+            <div id="resolved-findings-container">
+                <div class="empty-state">
+                    No resolved findings detected.
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- Persistent Findings -->
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">Persistent Findings</h2>
+        </div>
+
+        <div class="panel-body">
+
+            <div id="persistent-findings-container">
+                <div class="empty-state">
+                    No persistent findings.
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- Service Changes -->
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">Service / Port Changes</h2>
+        </div>
+
+        <div class="panel-body">
+
+            <div class="dashboard-grid">
+
+                <div class="stat-card">
+                    <div class="stat-label">New Services</div>
+                    <div class="stat-value" id="new-services-count">
+                        0
+                    </div>
+                    <div class="stat-description">
+                        Newly discovered
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Closed Services</div>
+                    <div class="stat-value" id="closed-services-count">
+                        0
+                    </div>
+                    <div class="stat-description">
+                        No longer available
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- New Services -->
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">New Services</h2>
+        </div>
+
+        <div class="panel-body">
+
+            <div id="new-services-container">
+                <div class="empty-state">
+                    No new services detected.
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- Closed Services -->
+    <div class="panel">
+        <div class="panel-header">
+            <h2 class="panel-title">Closed Services</h2>
+        </div>
+
+        <div class="panel-body">
+
+            <div id="closed-services-container">
+                <div class="empty-state">
+                    No closed services detected.
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script>
+    const comparisonScanId = {{ scan_id | tojson }};
+</script>
+
+<script src="{{ url_for('static', filename='js/comparison.js') }}"></script>
+
+{% endblock %}
